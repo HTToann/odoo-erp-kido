@@ -1,0 +1,69 @@
+{% extends "baseIndex.html" %} {% block title %}Đơn mua hàng{% endblock %} {%
+block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Đơn mua hàng</h2>
+
+  <div class="mb-3">
+    <a
+      href="{{ url_for('purchase_web.purchases_add') }}"
+      class="btn btn-warning"
+    >
+      Tạo đơn mua hàng
+    </a>
+  </div>
+
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-warning">
+      <tr>
+        <th>Mã đơn</th>
+        <th>Ngày đặt</th>
+        <th>Nhà cung cấp</th>
+        <th class="text-end">Tổng tiền</th>
+        <th>Trạng thái</th>
+        <th style="width: 220px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for po in purchases %}
+      <tr>
+        <td>{{ po.po_no }}</td>
+        <td>
+          {{ po.order_date.strftime('%Y-%m-%d') if po.order_date else '' }}
+        </td>
+        <td>{{ po.supplier.name if po.supplier else '' }}</td>
+        <td class="text-end">{{ '{:,.2f}'.format(po.total or 0) }}</td>
+        <td>
+          {% if po.status is string %} {% set st = po.status|lower %} {% else %}
+          {% set st = po.status.value|lower %} {% endif %} {% set badge = {
+          'draft':'secondary', 'confirmed':'primary', 'completed':'success',
+          'cancelled':'danger' }.get(st, 'secondary') %}
+
+          <span class="badge text-bg-{{ badge }}">{{ st }}</span>
+        </td>
+        <td>
+          <div class="d-flex flex-wrap gap-2">
+            <a
+              href="{{ url_for('purchase_web.purchases_edit', po_id=po.id) }}"
+              class="btn btn-sm btn-warning"
+              >Sửa</a
+            >
+            <form
+              method="post"
+              action="{{ url_for('purchase_web.purchases_delete', po_id=po.id) }}"
+              onsubmit="return confirm('Xóa đơn mua hàng này?')"
+              class="d-inline"
+            >
+              <button class="btn btn-sm btn-danger">Xóa</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center text-muted">Chưa có đơn mua hàng</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

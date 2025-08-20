@@ -1,0 +1,203 @@
+{% extends "baseIndex.html" %}
+
+{% block title %}
+  {{ "Tạo" if action=="add" else "Sửa" }} Phiếu nhận hàng
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ "Tạo" if action=="add" else "Sửa" }} Phiếu nhận hàng (GR)</h2>
+
+  <form method="post">
+    <div class="row g-3 mb-3">
+      <!-- PO select -->
+      <div class="col-md-6">
+  <label class="form-label">Đơn mua (PO)</label>
+  <select name="po_id" id="po-select" class="form-select" required>
+    <option value="">-- chọn --</option>
+    {% for p in purchases %}
+      {% set sel = (gr and gr.po_id==p.id) or (preselected_po_id is defined and preselected_po_id==p.id) %}
+      <option value="{{ p.id }}" {% if sel %}selected{% endif %}>
+        {{ p.po_no }} - {{ p.supplier.name if p.supplier else "" }}
+      </option>
+    {% endfor %}
+  </select>
+  <div class="form-text">Chỉ PO ở trạng thái <b>CONFIRMED</b> mới có trong danh sách.</div>
+</div>
+
+      <!-- Status select -->
+      <div class="col-md-6">
+        <label class="form-label">Trạng thái</label>
+        {% if gr %}
+          {% set st = gr.status|lower if gr.status is string else gr.status.value|lower %}
+        {% else %}
+          {% set st = 'draft' %}
+        {% endif %}
+        <select name="status" class="form-select">
+          <option value="draft"   {% if st=='draft' %}selected{% endif %}>draft</option>
+          <option value="checked" {% if st=='checked' %}selected{% endif %}>checked</option>
+          <option value="posted"  {% if st=='posted' %}selected{% endif %}>posted</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Lines -->
+    <h5 class="mt-2">Dòng nhận hàng</h5>
+    
+
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle" id="gr-lines">
+        <thead class="table-light">
+          <tr>
+            <th>Nguyên liệu</th>
+            <th style="width:20%">Số lượng nhận</th>
+            <th style="width:10%"></th>
+          </tr>
+        </thead>
+        <tbody id="gr-tbody">
+          {% set lines = prefill_lines if prefill_lines is defined else (gr.lines if gr else []) %}
+          {% for ln in lines %}
+            {% set i = loop.index0 %}
+            <tr>
+              <td>
+                <select name="lines[{{ i }}][material_id]" class="form-select" required>
+                  <option value="">-- chọn --</option>
+                  {% for m in materials %}
+                    <option value="{{ m.id }}"
+                      {% if (ln.material_id is defined and ln.material_id==m.id) or (ln.material and ln.material.id==m.id) %}selected{% endif %}>
+                      {{ m.sku }} - {{ m.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                {% if ln.po_line_id is defined %}
+                  <input type="hidden" name="lines[{{ i }}][po_line_id]" value="{{ ln.po_line_id }}">
+                {% endif %}
+              </td>
+              <td>
+                <input name="lines[{{ i }}][qty]" type="number" step="0.001" min="0" class="form-control"
+                       value="{{ ln.qty or 1 }}">
+              </td>
+              <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
+            </tr>
+          {% else %}
+            <tr>
+              <td>
+                <select name="lines[0][material_id]" class="form-select" required>
+                  <option value="">-- chọn --</option>
+                  {% for m in materials %}
+                    <option value="{{ m.id }}">{{ m.sku }} - {{ m.name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input name="lines[0][qty]" type="number" step="0.001" min="0" class="form-control" value="1"></td>
+              <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <button type="button" id="add-line" class="btn btn-outline-primary btn-sm">+ Thêm dòng</button>
+    </div>
+
+    <button type="submit" class="btn btn-success">Lưu</button>
+    <a href="{{ url_for('gr_web.gr_list') }}" class="btn btn-secondary">Hủy</a>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const tbl = document.getElementById('gr-lines').querySelector('tbody');
+  const addBtn = document.getElementById('add-line');
+  const poSel = document.getElementById('po-select');
+
+  function clearTableToOneEmptyRow(){
+    tbl.innerHTML = `
+      <tr>
+        <td>
+          <select name="lines[0][material_id]" class="form-select" required>
+            <option value="">-- chọn --</option>
+            {% for m in materials %}
+              <option value="{{ m.id }}">{{ m.sku }} - {{ m.name }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td><input name="lines[0][qty]" type="number" step="0.001" min="0" class="form-control" value="1"></td>
+        <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
+      </tr>`;
+  }
+
+  // render các dòng từ PO (khóa vật tư, gắn po_line_id, set max theo remaining)
+  function renderRowsFromPO(rows){
+    if(!rows || !rows.length){
+      clearTableToOneEmptyRow();
+      addBtn.disabled = false;   // cho phép thêm tay nếu không có dòng nào
+      return;
+    }
+    addBtn.disabled = true;      // dùng dòng từ PO thì khóa thêm tay (tránh sai vật tư)
+    tbl.innerHTML = "";
+    rows.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <input type="hidden" name="lines[${i}][material_id]" value="${r.material_id}">
+          <input type="hidden" name="lines[${i}][po_line_id]"  value="${r.po_line_id}">
+          <div class="form-control-plaintext">${r.sku} - ${r.name}</div>
+        </td>
+        <td>
+          <input name="lines[${i}][qty]" type="number" step="0.001" min="0" max="${r.remaining}" class="form-control" value="${r.remaining}">
+          <div class="form-text">Còn lại: ${r.remaining}</div>
+        </td>
+        <td></td>`;
+      tbl.appendChild(tr);
+    });
+  }
+
+  // gọi API khi đổi PO
+  async function loadRemainingByPO(){
+    const id = poSel.value;
+    if(!id){ clearTableToOneEmptyRow(); addBtn.disabled = false; return; }
+    try{
+      const res = await fetch(`/goods-receipts/api/po/${id}/remaining`, {headers: {"X-Requested-With":"fetch"}});
+      const rows = await res.json();
+      renderRowsFromPO(rows);
+    }catch(e){
+      console.error(e);
+      clearTableToOneEmptyRow();
+      addBtn.disabled = false;
+    }
+  }
+
+  // lần đầu vào form nếu đã có PO được chọn thì nạp luôn
+  if (poSel.value) loadRemainingByPO();
+  poSel.addEventListener('change', loadRemainingByPO);
+
+  // phần thêm/xóa dòng thủ công (chỉ bật khi addBtn.enabled = true)
+  const body = tbl;
+  addBtn.addEventListener('click', ()=>{
+    if (addBtn.disabled) return;
+    const tr = body.querySelector('tr:last-child').cloneNode(true);
+    tr.querySelectorAll('input').forEach(i=> i.value = i.name.includes('[qty]') ? '1' : '');
+    tr.querySelectorAll('select').forEach(s=> s.selectedIndex = 0);
+    body.appendChild(tr);
+    reindex();
+  });
+
+  body.addEventListener('click', (e)=>{
+    if (e.target.classList.contains('remove-line')){
+      if(addBtn.disabled) return; // đang ở chế độ từ PO thì không xóa từng dòng
+      const rows = body.querySelectorAll('tr');
+      if(rows.length>1){ e.target.closest('tr').remove(); reindex(); }
+    }
+  });
+
+  function reindex(){
+    [...tbl.querySelectorAll('tr')].forEach((tr,i)=>{
+      tr.querySelectorAll('select,input').forEach(el=>{
+        el.name = el.name.replace(/lines\[\d+\]/, `lines[${i}]`);
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

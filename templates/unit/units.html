@@ -1,0 +1,54 @@
+{% extends "baseIndex.html" %} {% block title %}Danh sách đơn vị tính{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Danh sách đơn vị tính</h2>
+
+  <div class="mb-3">
+    <a href="{{ url_for('unit_web.units_add') }}" class="btn btn-primary"
+      >+ Thêm đơn vị</a
+    >
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 5%">STT</th>
+          <th>Mã</th>
+          <th>Tên</th>
+          <th style="width: 15%">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in units %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ u.code }}</td>
+          <td>{{ u.name }}</td>
+          <td>
+            <a
+              href="{{ url_for('unit_web.units_edit', unit_id=u.id) }}"
+              class="btn btn-sm btn-warning"
+              >Sửa</a
+            >
+
+            <form
+              method="post"
+              action="{{ url_for('unit_web.units_delete', unit_id=u.id) }}"
+              class="d-inline"
+              onsubmit="return confirm('Xóa đơn vị {{ u.code }}?');"
+            >
+              <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center">Không có dữ liệu</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

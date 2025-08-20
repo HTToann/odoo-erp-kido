@@ -1,0 +1,52 @@
+{% extends "baseIndex.html" %}
+{% block title %}{{ "Thêm" if action=="add" else "Sửa" }} Nguyên liệu{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">{{ "Thêm" if action=="add" else "Sửa" }} Nguyên liệu</h2>
+
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Mã SKU</label>
+      <input type="text" name="sku" class="form-control" value="{{ material.sku if material else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Tên nguyên liệu</label>
+      <input type="text" name="name" class="form-control" value="{{ material.name if material else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Danh mục</label>
+      <input type="text" name="category" class="form-control" value="{{ material.category if material else '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Đơn vị</label>
+      <select name="unit_id" class="form-select" required>
+        <option value="">-- chọn đơn vị --</option>
+        {% for u in units %}
+          <option value="{{ u.id }}" {% if material and material.unit_id==u.id %}selected{% endif %}>
+            {{ u.code }} - {{ u.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Thuộc tính (JSON)</label>
+      <textarea name="attrs" class="form-control" rows="4">{{ material.attrs if material and material.attrs else '{}' }}</textarea>
+      <div class="form-text">Nhập JSON để lưu các thuộc tính bổ sung (ví dụ: {"mau":"đỏ","chất liệu":"inox"})</div>
+    </div>
+
+    <div class="mb-3 form-check">
+      <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" {% if material is not none and material.is_active %}checked{% elif material is none %}checked{% endif %}>
+      <label class="form-check-label" for="is_active">Đang hoạt động</label>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success">Lưu</button>
+      <a href="{{ url_for('material_web.materials_list') }}" class="btn btn-secondary">Hủy</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

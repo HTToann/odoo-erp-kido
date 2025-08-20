@@ -1,0 +1,76 @@
+{% extends "baseIndex.html" %} {% block title %}Báo giá nhà cung cấp{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Báo giá nhà cung cấp (VQ)</h2>
+
+  <div class="mb-3">
+    <a href="{{ url_for('vq_web.vq_add') }}" class="btn btn-primary"
+      >+ Nhập báo giá</a
+    >
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 6%">ID</th>
+          <th style="width: 12%">RFQ</th>
+          <th>Nhà cung cấp</th>
+          <th style="width: 12%">Trạng thái</th>
+          <th style="width: 10%" class="text-center">#Lines</th>
+          <th style="width: 14%" class="text-end">Tổng</th>
+          <th style="width: 14%">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for vq in vqs %} {# status lowercase, an toàn cho cả dữ liệu cũ
+        (string) và Enum mới #} {% if vq.status is string %} {% set st =
+        vq.status|lower %} {% else %} {% set st = vq.status.value|lower %} {%
+        endif %} {% set badge = { 'received':'secondary', 'selected':'success',
+        'rejected':'danger' }.get(st, 'secondary') %} {% set t =
+        namespace(sum=0) %} {% for ln in vq.lines %} {% set t.sum = t.sum +
+        ((ln.qty or 0) * (ln.price or 0)) %} {% endfor %}
+
+        <tr>
+          <td>#{{ vq.id }}</td>
+          <td>{{ vq.rfq.id if vq.rfq else '—' }}</td>
+          <td>{{ vq.supplier.name if vq.supplier else '—' }}</td>
+          <td>
+            <span class="badge text-bg-{{ badge }} text-uppercase"
+              >{{ st }}</span
+            >
+          </td>
+          <td class="text-center">{{ vq.lines|length if vq.lines else 0 }}</td>
+          <td class="text-end">{{ '%.2f'|format(t.sum) }}</td>
+          <td>
+            <a
+              href="{{ url_for('vq_web.vq_edit', vq_id=vq.id) }}"
+              class="btn btn-sm btn-warning"
+              >Sửa</a
+            >
+            <form
+              method="post"
+              action="{{ url_for('vq_web.vq_delete', vq_id=vq.id) }}"
+              class="d-inline"
+              onsubmit="return confirm('Xóa báo giá #{{ vq.id }}?');"
+            >
+              <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+            </form>
+            <a
+              href="{{ url_for('purchase_web.purchases_from_vq', vq_id=vq.id) }}"
+              class="btn btn-sm btn-outline-success"
+            >
+              Tạo PO
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted">Chưa có báo giá</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

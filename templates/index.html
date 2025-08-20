@@ -1,0 +1,187 @@
+{% extends "baseIndex.html" %} {% block title %}Trang chủ ERP Kido{% endblock %}
+{% block content %}
+<style>
+  /* Dashboard cards */
+  .dashboard-card {
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+      border-color 0.18s ease;
+    border-radius: 12px;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border-color: var(--bs-primary);
+  }
+  .dashboard-card .card-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 170px; /* đồng đều chiều cao */
+  }
+  .dashboard-card .card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  .dashboard-card p {
+    opacity: 0.85;
+    margin-bottom: 1rem;
+  }
+  .dashboard-card .stretched-link {
+    margin-top: auto;
+  }
+</style>
+
+<h2 class="mb-3">Quy trình nghiệp vụ - ERP Kido</h2>
+<p class="text-secondary mb-4">
+  Chào mừng đến hệ thống ERP quản lý mua hàng & nguyên liệu của Bánh Trung Thu
+  Kido.
+</p>
+
+{% if current_user.has_role(UserRole.ADMIN, UserRole.BUYER) %}
+<h5 class="mt-2 mb-3">Dành cho Buyer</h5>
+<div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+  <div class="col">
+    <div class="card dashboard-card h-100 border-warning">
+      <div class="card-body">
+        <h5 class="card-title text-warning">
+          <i class="bi bi-bag-check"></i> Đơn mua hàng (PO)
+        </h5>
+        <p class="card-text">Tạo & quản lý đơn đặt hàng.</p>
+        <a
+          href="{{ url_for('purchase_web.purchases_list') }}"
+          class="btn btn-warning btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card dashboard-card h-100 border-warning">
+      <div class="card-body">
+        <h5 class="card-title text-warning">
+          <i class="bi bi-file-earmark-plus"></i> Đề nghị mua (PR)
+        </h5>
+        <p class="card-text">Tạo & quản lý đề nghị mua.</p>
+        <a
+          href="{{ url_for('pr_web.pr_list') }}"
+          class="btn btn-warning btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card dashboard-card h-100 border-warning">
+      <div class="card-body">
+        <h5 class="card-title text-warning">
+          <i class="bi bi-envelope-paper"></i> Yêu cầu báo giá (RFQ)
+        </h5>
+        <p class="card-text">Tạo & quản lý yêu cầu báo giá.</p>
+        <a
+          href="{{ url_for('rfq_web.rfq_list') }}"
+          class="btn btn-warning btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card dashboard-card h-100 border-warning">
+      <div class="card-body">
+        <h5 class="card-title text-warning">
+          <i class="bi bi-cash-stack"></i> Báo giá NCC (VQ)
+        </h5>
+        <p class="card-text">Tạo & quản lý báo giá nhà cung cấp.</p>
+        <a
+          href="{{ url_for('vq_web.vq_list') }}"
+          class="btn btn-warning btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% if current_user.has_role(UserRole.WAREHOUSE) %}
+<h5 class="mt-5 mb-3">Dành cho Thủ kho</h5>
+<div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+  <div class="col">
+    <div class="card dashboard-card h-100 border-primary">
+      <div class="card-body">
+        <h5 class="card-title text-primary">
+          <i class="bi bi-box-seam"></i> GR
+        </h5>
+        <p class="card-text">Phiếu nhận hàng.</p>
+        <a
+          href="{{ url_for('gr_web.gr_list') }}"
+          class="btn btn-primary btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% if current_user.has_role(UserRole.QC) %}
+<h5 class="mt-5 mb-3">Dành cho QC</h5>
+<div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+  <div class="col">
+    <div class="card dashboard-card h-100 border-danger">
+      <div class="card-body">
+        <h5 class="card-title text-danger">
+          <i class="bi bi-clipboard2-check"></i> QC
+        </h5>
+        <p class="card-text">Báo cáo kiểm tra chất lượng.</p>
+        <a
+          href="{{ url_for('qc_web.qc_list') }}"
+          class="btn btn-danger btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% if current_user.has_role(UserRole.APPROVER) %}
+<h5 class="mt-5 mb-3">Dành cho duyệt đơn</h5>
+<div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+  <div class="col">
+    <div class="card dashboard-card h-100 border-danger">
+      <div class="card-body">
+        <h5 class="card-title text-danger">
+          <i class="bi bi-bag-check"></i> Đơn mua hàng (PO)
+        </h5>
+        <p class="card-text">Tạo & quản lý đơn đặt hàng.</p>
+        <a
+          href="{{ url_for('purchase_web.purchases_list') }}"
+          class="btn btn-warning btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% if current_user.has_role(UserRole.ACCOUNTANT) %}
+<h5 class="mt-5 mb-3">Dành cho Kế toán</h5>
+<div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+  <div class="col">
+    <div class="card dashboard-card h-100 border-success">
+      <div class="card-body">
+        <h5 class="card-title text-success">
+          <i class="bi bi-receipt"></i> Hóa đơn & Thanh toán
+        </h5>
+        <p class="card-text">Theo dõi công nợ & chi trả.</p>
+        <a
+          href="{{ url_for('invoice_web.invoice_list') }}"
+          class="btn btn-success btn-sm stretched-link"
+          >Xem</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% endblock %}

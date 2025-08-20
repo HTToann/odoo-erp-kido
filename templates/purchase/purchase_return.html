@@ -1,0 +1,86 @@
+{% extends "baseIndex.html" %} {% block title %}Phiếu trả hàng | ERP Kido{%
+endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Danh sách phiếu trả hàng</h3>
+  <a href="{{ url_for('preturn_web.return_add') }}" class="btn btn-primary">
+    + Tạo phiếu trả hàng
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 80px">ID</th>
+            <th>GR ID</th>
+            <th>Nhà cung cấp</th>
+            <th>Ngày GR</th>
+            <th>Trạng thái</th>
+            <th class="text-center">Số dòng</th>
+            <th style="width: 160px" class="text-end">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if returns and returns|length > 0 %} {% for ret in returns %}
+          <tr>
+            <td>#{{ ret.id }}</td>
+            <td>{{ ret.gr_id }}</td>
+            <td>
+              {# cố gắng lấy tên NCC nếu có: ret.gr.supplier.name hoặc
+              ret.gr.supplier_name #} {{ (ret.gr.supplier.name if ret.gr and
+              ret.gr.supplier and ret.gr.supplier.name else
+              (ret.gr.supplier_name if ret.gr and ret.gr.supplier_name else ''))
+              }}
+            </td>
+            <td>
+              {{ ret.gr.receipt_date.strftime('%d/%m/%Y') if ret.gr and
+              ret.gr.receipt_date else '' }}
+            </td>
+            {% if ret.status is string %} {% set st = ret.status|lower %} {%
+            else %} {% set st = ret.status.value|lower %} {% endif %} {% set
+            badge = { 'draft': 'secondary', 'approved': 'info', 'returned':
+            'warning', 'posted': 'success' }.get(st, 'secondary') %}
+
+            <td>
+              <span class="badge text-bg-{{ badge }} text-uppercase"
+                >{{ st }}</span
+              >
+            </td>
+
+            <td class="text-center">
+              {{ ret.lines|length if ret.lines else 0 }}
+            </td>
+            <td class="text-end">
+              <a
+                href="{{ url_for('preturn_web.return_edit', return_id=ret.id) }}"
+                class="btn btn-sm btn-outline-primary"
+              >
+                Sửa
+              </a>
+              <form
+                method="post"
+                action="{{ url_for('preturn_web.return_delete', return_id=ret.id) }}"
+                class="d-inline"
+                onsubmit="return confirm('Xóa phiếu trả hàng #{{ ret.id }}?');"
+              >
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  Xóa
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              Chưa có phiếu trả hàng nào.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}{% endblock %}

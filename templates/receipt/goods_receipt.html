@@ -1,0 +1,61 @@
+{% extends "baseIndex.html" %} {% block title %}Phiếu nhận hàng (GR){% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Phiếu nhận hàng (Goods Receipt)</h2>
+
+  <div class="mb-3">
+    <a href="{{ url_for('gr_web.gr_add') }}" class="btn btn-success"
+      >+ Tạo GR</a
+    >
+  </div>
+
+  <table class="table table-bordered table-hover">
+    <thead class="table-success">
+      <tr>
+        <th>Mã GR</th>
+        <th>PO</th>
+        <th>Ngày nhận</th>
+        <th>Trạng thái</th>
+        <th style="width: 160px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gr in goods_receipts %}
+      <tr>
+        <td>GR#{{ gr.id }}</td>
+        <td>{{ gr.po.po_no if gr.po else '' }}</td>
+        <td>
+          {{ gr.received_at.strftime('%Y-%m-%d') if gr.received_at else '' }}
+        </td>
+        {% if gr.status is string %} {% set st = gr.status|lower %} {% else %}
+        {% set st = gr.status.value|lower %} {% endif %} {% set badge = {
+        'draft':'secondary', 'checked':'info', 'posted':'success' }.get(st,
+        'secondary') %}
+
+        <td>
+          <span class="badge text-bg-{{ badge }} text-uppercase">{{ st }}</span>
+        </td>
+        <td class="d-flex gap-2">
+          <a
+            href="{{ url_for('gr_web.gr_edit', gr_id=gr.id) }}"
+            class="btn btn-sm btn-warning"
+            >Sửa</a
+          >
+          <form
+            method="post"
+            action="{{ url_for('gr_web.gr_delete', gr_id=gr.id) }}"
+            onsubmit="return confirm('Xóa GR này?')"
+          >
+            <button class="btn btn-sm btn-danger">Xóa</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="text-center">Chưa có phiếu nhận hàng</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

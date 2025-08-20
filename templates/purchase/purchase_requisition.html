@@ -1,0 +1,61 @@
+{% extends "baseIndex.html" %} {% block title %}Yêu cầu mua hàng (PR){% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Yêu cầu mua hàng (Purchase Requisition)</h2>
+
+  <div class="mb-3">
+    <a href="{{ url_for('pr_web.pr_add') }}" class="btn btn-success"
+      >+ Tạo PR</a
+    >
+  </div>
+
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="table-info">
+      <tr>
+        <th>Mã PR</th>
+        <th>Người yêu cầu</th>
+        <th>Ghi chú</th>
+        <th>Trạng thái</th>
+        <th style="width: 190px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requisitions %}
+      <tr>
+        <td>PR#{{ r.id }}</td>
+        <td>
+          {{ r.requester.full_name or r.requester.username if r.requester else
+          '' }}
+        </td>
+        <td>{{ r.note or '' }}</td>
+        <td><span class="badge bg-secondary">{{ r.status.value }}</span></td>
+        <td class="d-flex gap-2">
+          <a
+            href="{{ url_for('pr_web.pr_edit', pr_id=r.id) }}"
+            class="btn btn-sm btn-warning"
+            >Sửa</a
+          >
+          <form
+            method="post"
+            action="{{ url_for('pr_web.pr_delete', pr_id=r.id) }}"
+            onsubmit="return confirm('Xóa PR này?')"
+          >
+            <button class="btn btn-sm btn-danger">Xóa</button>
+          </form>
+          <a
+            href="{{ url_for('rfq_web.rfq_from_pr', pr_id=r.id) }}"
+            class="btn btn-sm btn-outline-primary"
+          >
+            Tạo RFQ
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center">Chưa có PR</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

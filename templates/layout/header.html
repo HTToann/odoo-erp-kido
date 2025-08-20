@@ -1,0 +1,141 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="/">ERP Kido</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNav"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNav">
+      {% if current_user.is_authenticated %}
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Trang chủ</a>
+        </li>
+
+        <!-- Danh mục
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dmMenu"
+            role="button"
+            data-bs-toggle="dropdown"
+          >
+            Danh mục
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dmMenu">
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('supplier_web.suppliers_list') }}"
+                >Nhà cung cấp</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('material_web.materials_list') }}"
+                >Nguyên liệu</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('unit_web.units_list') }}"
+                >Đơn vị tính</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('department_web.departments_list') }}"
+                >Phòng ban</a
+              >
+            </li>
+          </ul>
+        </li>
+
+        Quy trình mua hàng
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="qtMenu"
+            role="button"
+            data-bs-toggle="dropdown"
+          >
+            Quy trình
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="qtMenu">
+            <li>
+              <a class="dropdown-item" href="{{ url_for('pr_web.pr_list') }}"
+                >PR (Yêu cầu mua - Purchase Requisition)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('rfq_web.rfq_list') }}"
+                >RFQ (Yêu cầu báo giá)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('vq_web.vq_list') }}"
+                >Báo giá nhà cung cấp (Vendor Quotation)</a
+              >
+            </li>
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('purchase_web.purchases_list') }}"
+                >Đơn mua hàng (PO)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('gr_web.gr_list') }}"
+                >Phiếu nhận hàng (GR)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('qc_web.qc_list') }}"
+                >QC Report</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('preturn_web.return_list') }}"
+                >Phiếu trả hàng</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('invoice_web.invoice_list') }}"
+                >Hóa đơn & Thanh toán</a
+              >
+            </li>
+          </ul>
+        </li>
+        -->
+      </ul>
+
+      <div class="d-flex">
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light"
+          >Đăng xuất</a
+        >
+      </div>
+      {% else %}
+      <div class="ms-auto">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light"
+          >Đăng nhập</a
+        >
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</nav>

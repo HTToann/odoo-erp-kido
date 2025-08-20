@@ -1,0 +1,86 @@
+{% extends "baseIndex.html" %} {% block title %}Kiểm tra chất lượng{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Báo cáo kiểm tra chất lượng (QC Report)</h2>
+
+  <div class="mb-3">
+    <a href="{{ url_for('qc_web.qc_add') }}" class="btn btn-primary"
+      >Tạo QC Report</a
+    >
+  </div>
+
+  <table class="table table-bordered align-middle">
+    <thead class="table-primary">
+      <tr>
+        <th>ID</th>
+        <th>GR ID</th>
+        <!-- <th>Nhà cung cấp</th> -->
+        <th>Ngày GR</th>
+        <th>Trạng thái</th>
+        <th class="text-center">#Lines</th>
+        <th class="text-center">Pass</th>
+        <th class="text-center">Fail</th>
+        <th style="width: 220px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for qc in qcs %} {# ---- Resolve status safely for Enum or legacy
+      string ---- #} {% if qc.status is string %} {% set st = qc.status|lower %}
+      {% else %} {% set st = qc.status.value|lower %} {% endif %} {# ---- Badge
+      color map ---- #} {% set badge = { 'pending': 'secondary', 'passed':
+      'success', 'failed': 'danger' }.get(st, 'secondary') %} {# ---- Metrics
+      ---- #} {% set total = qc.lines|length if qc.lines else 0 %} {% set
+      pass_count = (qc.lines|selectattr('result','equalto','pass')|list|length)
+      if qc.lines else 0 %} {% set fail_count =
+      (qc.lines|selectattr('result','equalto','fail')|list|length) if qc.lines
+      else 0 %}
+
+      <tr>
+        <td>#{{ qc.id }}</td>
+        <td>{{ qc.gr_id }}</td>
+        <!-- <td>
+          {% if qc.gr and qc.gr.supplier and qc.gr.supplier.name %} {{
+          qc.gr.supplier.name }} {% elif qc.gr and qc.gr.supplier_name %} {{
+          qc.gr.supplier_name }} {% else %}
+          <span class="text-muted">—</span>
+          {% endif %}
+        </td> -->
+        <td>
+          {% if qc and qc.checked_at %} {{ qc.checked_at.strftime('%Y-%m-%d') }}
+          {% else %}
+          <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge text-bg-{{ badge }} text-uppercase">{{ st }}</span>
+        </td>
+        <td class="text-center">{{ total }}</td>
+        <td class="text-center">{{ pass_count }}</td>
+        <td class="text-center">{{ fail_count }}</td>
+        <td>
+          <div class="d-flex flex-wrap gap-2">
+            <a
+              href="{{ url_for('qc_web.qc_edit', qc_id=qc.id) }}"
+              class="btn btn-sm btn-warning"
+              >Sửa</a
+            >
+            <form
+              method="post"
+              action="{{ url_for('qc_web.qc_delete', qc_id=qc.id) }}"
+              onsubmit="return confirm('Xóa QC #{{ qc.id }}?')"
+              class="d-inline"
+            >
+              <button class="btn btn-sm btn-danger">Xóa</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" class="text-center text-muted">Chưa có QC Report</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

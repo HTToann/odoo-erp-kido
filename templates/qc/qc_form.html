@@ -1,0 +1,142 @@
+{% extends "baseIndex.html" %}
+{% block title %}{{ "Tạo" if action=="add" else "Sửa" }} QC Report{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ "Tạo" if action=="add" else "Sửa" }} QC Report</h2>
+
+  <form method="post">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">Phiếu nhận (GR)</label>
+        <select name="gr_id" class="form-select" required>
+          <option value="">-- chọn --</option>
+          {% for g in grs %}
+            <option value="{{ g.id }}" {% if qc and qc.gr_id==g.id %}selected{% endif %}>
+              GR#{{ g.id }} - {{ g.po.po_no if g.po else "" }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+  <label class="form-label">Trạng thái</label>
+  {% if qc %}
+    {% set st = qc.status|lower if qc.status is string else qc.status.value|lower %}
+  {% else %}
+    {% set st = 'pending' %}
+  {% endif %}
+  <select name="status" class="form-select">
+    <option value="pending" {% if st=='pending' %}selected{% endif %}>pending</option>
+    <option value="passed"  {% if st=='passed'  %}selected{% endif %}>passed</option>
+    <option value="failed"  {% if st=='failed'  %}selected{% endif %}>failed</option>
+  </select>
+</div>
+    </div>
+
+    <h5>Kết quả kiểm tra (từng dòng GR)</h5>
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered align-middle" id="qc-lines">
+        <thead class="table-light">
+          <tr>
+            <th>GR Line</th>
+            <th>Kết quả</th>
+            <th>Ghi chú</th>
+            <th style="width:10%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set lines = qc.lines if qc else [] %}
+          {% for ln in lines %}
+          {% set i = loop.index0 %}
+          <tr>
+            <td>
+              <select name="lines[{{ i }}][gr_line_id]" class="form-select" required>
+                <option value="">-- chọn --</option>
+                {% for gl in gr_lines %}
+                  <option value="{{ gl.id }}" {% if ln.gr_line_id==gl.id %}selected{% endif %}>
+                    GR#{{ gl.gr_id }} - {{ gl.material.name if gl.material else "" }} ({{ gl.qty }})
+                  </option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              {% set r = ln.result or 'pass' %}
+              <select name="lines[{{ i }}][result]" class="form-select">
+                <option value="pass" {% if r=='pass' %}selected{% endif %}>pass</option>
+                <option value="fail" {% if r=='fail' %}selected{% endif %}>fail</option>
+              </select>
+            </td>
+            <td><input name="lines[{{ i }}][note]" class="form-control" value="{{ ln.note or '' }}"></td>
+            <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td>
+              <select name="lines[0][gr_line_id]" class="form-select" required>
+                <option value="">-- chọn --</option>
+                {% for gl in gr_lines %}
+                  <option value="{{ gl.id }}">
+                    GR#{{ gl.gr_id }} - {{ gl.material.name if gl.material else "" }} ({{ gl.qty }})
+                  </option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <select name="lines[0][result]" class="form-select">
+                <option value="pass" selected>pass</option>
+                <option value="fail">fail</option>
+              </select>
+            </td>
+            <td><input name="lines[0][note]" class="form-control"></td>
+            <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" id="add-line" class="btn btn-outline-secondary">+ Thêm dòng</button>
+      <button name="action" value="save" class="btn btn-secondary">Lưu</button>
+      <button name="action" value="finalize" class="btn btn-success"
+              onclick="return confirm('Chốt QC và nhập kho phần đạt?');">
+        Chốt & Nhập kho
+      </button>
+      <a href="{{ url_for('qc_web.qc_list') }}" class="btn btn-outline-secondary">Hủy</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const tbl = document.getElementById('qc-lines').querySelector('tbody');
+  document.getElementById('add-line').addEventListener('click', ()=>{
+    const tr = tbl.querySelector('tr:last-child').cloneNode(true);
+    tr.querySelectorAll('input').forEach(i=>i.value='');
+    tr.querySelectorAll('select').forEach(s=>{
+      if(s.name.includes('[result]')) { s.value='pass'; }
+      else { s.selectedIndex = 0; }
+    });
+    tbl.appendChild(tr);
+    reindex();
+  });
+  tbl.addEventListener('click', e=>{
+    if(e.target.classList.contains('remove-line')){
+      const rows = tbl.querySelectorAll('tr');
+      if(rows.length > 1){
+        e.target.closest('tr').remove();
+        reindex();
+      }
+    }
+  });
+  function reindex(){
+    [...tbl.querySelectorAll('tr')].forEach((tr, i)=>{
+      tr.querySelectorAll('select,input').forEach(el=>{
+        el.name = el.name.replace(/lines\[\d+\]/, `lines[${i}]`);
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

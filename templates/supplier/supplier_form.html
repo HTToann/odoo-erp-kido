@@ -1,0 +1,61 @@
+{% extends "baseIndex.html" %} {% block title %}{{ "Thêm" if action == "add"
+else "Sửa" }} Nhà cung cấp{% endblock %} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ "Thêm" if action == "add" else "Sửa" }} Nhà cung cấp</h2>
+
+  <form method="post" class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Mã NCC</label>
+      <input
+        name="code"
+        class="form-control"
+        value="{{ supplier.code if supplier else '' }}"
+        required
+      />
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Tên nhà cung cấp</label>
+      <input
+        name="name"
+        class="form-control"
+        value="{{ supplier.name if supplier else '' }}"
+        required
+      />
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Số điện thoại</label>
+      <input
+        name="phone"
+        class="form-control"
+        value="{{ supplier.phone if supplier else '' }}"
+      />
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email</label>
+      <input
+        type="email"
+        name="email"
+        class="form-control"
+        value="{{ supplier.email if supplier else '' }}"
+      />
+    </div>
+    <div class="col-12">
+      <label class="form-label">Địa chỉ</label>
+      <input
+        name="address"
+        class="form-control"
+        value="{{ supplier.address if supplier else '' }}"
+      />
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-success">Lưu</button>
+      <a
+        href="{{ url_for('supplier_web.suppliers_list') }}"
+        class="btn btn-secondary"
+        >Hủy</a
+      >
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "baseIndex.html" %} {% block title %}Danh sách Nguyên liệu{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Danh sách Nguyên liệu</h2>
+
+  <div class="mb-3">
+    <a
+      href="{{ url_for('material_web.materials_add') }}"
+      class="btn btn-success"
+      >+ Thêm nguyên liệu</a
+    >
+  </div>
+
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-success">
+      <tr>
+        <th>SKU</th>
+        <th>Tên nguyên liệu</th>
+        <th>Danh mục</th>
+        <th>Đơn vị</th>
+        <th>Trạng thái</th>
+        <th style="width: 180px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in materials %}
+      <tr>
+        <td>{{ m.sku }}</td>
+        <td>{{ m.name }}</td>
+        <td>{{ m.category or '' }}</td>
+        <td>{{ m.unit.name if m.unit else '' }}</td>
+        <td>
+          {% if m.is_active %}
+          <span class="badge bg-success">Hoạt động</span>
+          {% else %}
+          <span class="badge bg-secondary">Ngừng</span>
+          {% endif %}
+        </td>
+        <td class="d-flex gap-2">
+          <a
+            href="{{ url_for('material_web.materials_edit', material_id=m.id) }}"
+            class="btn btn-sm btn-warning"
+            >Sửa</a
+          >
+          <form
+            method="post"
+            action="{{ url_for('material_web.materials_delete', material_id=m.id) }}"
+            onsubmit="return confirm('Xóa nguyên liệu này?')"
+          >
+            <button class="btn btn-sm btn-danger">Xóa</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center">Chưa có nguyên liệu nào</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

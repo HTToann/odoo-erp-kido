@@ -1,0 +1,100 @@
+{% extends "baseIndex.html" %} {% block title %}Báo giá (RFQ){% endblock %} {%
+block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Yêu cầu báo giá (RFQ)</h2>
+
+  <div class="mb-3 d-flex gap-2">
+    <a href="{{ url_for('rfq_web.rfq_add') }}" class="btn btn-secondary"
+      >Tạo RFQ</a
+    >
+
+    <div class="dropdown">
+      <button
+        class="btn btn-outline-secondary dropdown-toggle"
+        data-bs-toggle="dropdown"
+      >
+        Tạo RFQ từ PR
+      </button>
+      <ul class="dropdown-menu">
+        {% if prs and prs|length %} {% for p in prs %}
+        <li>
+          <a
+            class="dropdown-item"
+            href="{{ url_for('rfq_web.rfq_from_pr', pr_id=p.id) }}"
+          >
+            PR#{{ p.id }} - {{ p.department.name if p.department else '' }}
+          </a>
+        </li>
+        {% endfor %} {% else %}
+        <li>
+          <span class="dropdown-item text-muted">Không có PR khả dụng</span>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <table class="table table-bordered align-middle">
+    <thead class="table-secondary">
+      <tr>
+        <th>ID</th>
+        <th>PR</th>
+        <th>Nhà cung cấp</th>
+        <th>Trạng thái</th>
+        <th class="text-center">#Lines</th>
+        <th style="width: 220px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rfq in rfqs %} {% if rfq.status is string %} {% set st =
+      rfq.status|lower %} {% else %} {% set st = rfq.status.value|lower %} {%
+      endif %} {% set badge = { 'draft': 'secondary', 'submitted': 'info',
+      'approved': 'success', 'rejected': 'danger' }.get(st, 'secondary') %}
+
+      <tr>
+        <td>#{{ rfq.id }}</td>
+        <td>{{ rfq.pr.pr_no if rfq.pr and rfq.pr.pr_no else rfq.pr_id }}</td>
+        <td>
+          {% if rfq.vqs is defined and rfq.vqs %} {% for v in rfq.vqs %} {% if
+          v.supplier and v.supplier.name %}
+          <span class="badge text-bg-dark me-1">{{ v.supplier.name }}</span>
+          {% endif %} {% endfor %} {% else %}<span class="text-muted">—</span>{%
+          endif %}
+        </td>
+        <td>
+          <span class="badge text-bg-{{ badge }} text-uppercase">{{ st }}</span>
+        </td>
+        <td class="text-center">{{ rfq.lines|length if rfq.lines else 0 }}</td>
+        <td>
+          <div class="d-flex flex-wrap gap-2">
+            <a
+              href="{{ url_for('rfq_web.rfq_edit', rfq_id=rfq.id) }}"
+              class="btn btn-sm btn-warning"
+              >Sửa</a
+            >
+            <form
+              method="post"
+              action="{{ url_for('rfq_web.rfq_delete', rfq_id=rfq.id) }}"
+              onsubmit="return confirm('Xóa RFQ #{{ rfq.id }}?')"
+              class="d-inline"
+            >
+              <button class="btn btn-sm btn-danger">Xóa</button>
+            </form>
+            <a
+              href="{{ url_for('vq_web.vq_from_rfq', rfq_id=rfq.id) }}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              Nhập báo giá
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center text-muted">Chưa có RFQ</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

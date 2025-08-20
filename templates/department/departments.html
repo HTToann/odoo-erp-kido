@@ -1,0 +1,57 @@
+{% extends "baseIndex.html" %} {% block title %}Danh sách phòng ban{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Danh sách phòng ban</h2>
+
+  <div class="mb-3">
+    <a
+      href="{{ url_for('department_web.departments_add') }}"
+      class="btn btn-primary"
+    >
+      + Thêm phòng ban
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 5%">STT</th>
+          <th>Mã</th>
+          <th>Tên</th>
+          <th style="width: 15%">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in departments %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ d.code }}</td>
+          <td>{{ d.name }}</td>
+          <td>
+            <a
+              href="{{ url_for('department_web.departments_edit', dept_id=d.id) }}"
+              class="btn btn-sm btn-warning"
+              >Sửa</a
+            >
+
+            <form
+              method="post"
+              action="{{ url_for('department_web.departments_delete', dept_id=d.id) }}"
+              class="d-inline"
+              onsubmit="return confirm('Xóa phòng ban {{ d.code }}?');"
+            >
+              <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center">Không có dữ liệu</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

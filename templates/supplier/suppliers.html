@@ -1,0 +1,56 @@
+{% extends "baseIndex.html" %} {% block title %}Quản lý Nhà cung cấp{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Quản lý Nhà cung cấp</h2>
+
+  <div class="mb-3">
+    <a
+      href="{{ url_for('supplier_web.suppliers_add') }}"
+      class="btn btn-primary"
+      >Thêm nhà cung cấp</a
+    >
+  </div>
+
+  <table class="table table-striped table-bordered">
+    <thead class="table-dark">
+      <tr>
+        <th>Mã NCC</th>
+        <th>Tên nhà cung cấp</th>
+        <th>Địa chỉ</th>
+        <th>Số điện thoại</th>
+        <th>Email</th>
+        <th style="width: 160px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for supplier in suppliers %}
+      <tr>
+        <td>{{ supplier.code }}</td>
+        <td>{{ supplier.name }}</td>
+        <td>{{ supplier.address }}</td>
+        <td>{{ supplier.phone }}</td>
+        <td>{{ supplier.email }}</td>
+        <td class="d-flex gap-2">
+          <a
+            href="{{ url_for('supplier_web.suppliers_edit', supplier_id=supplier.id) }}"
+            class="btn btn-sm btn-warning"
+            >Sửa</a
+          >
+          <form
+            method="post"
+            action="{{ url_for('supplier_web.suppliers_delete', supplier_id=supplier.id) }}"
+            onsubmit="return confirm('Xóa nhà cung cấp này?')"
+          >
+            <button class="btn btn-sm btn-danger">Xóa</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center">Chưa có nhà cung cấp</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

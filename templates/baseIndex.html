@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}ERP Kido{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    {% block head %}{% endblock %}
+  </head>
+  <body class="d-flex flex-column min-vh-100">
+    {% include 'layout/header.html' %}
+
+    <main class="flex-grow-1 py-4">
+      <div class="container">
+        {# ---- Flash messages dùng cho mọi trang ---- #} {% with messages =
+        get_flashed_messages(with_categories=true) %} {% if messages %} {% for
+        category, message in messages %} {# map 'error' -> 'danger' cho
+        Bootstrap #} {% set bs = 'danger' if category == 'error' else category
+        %}
+        <div
+          class="alert alert-{{ bs }} alert-dismissible fade show"
+          role="alert"
+        >
+          {{ message }}
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
+        </div>
+        {% endfor %} {% endif %} {% endwith %} {#
+        ------------------------------------------- #} {% block content %}
+        <!-- Nội dung sẽ được trang con ghi đè -->
+        {% endblock %}
+      </div>
+    </main>
+
+    {% include 'layout/footer.html' %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

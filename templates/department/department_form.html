@@ -1,0 +1,41 @@
+{% extends "baseIndex.html" %} {% block title %}{{ "Tạo" if action=="add" else
+"Sửa" }} phòng ban{% endblock %} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ "Tạo" if action=="add" else "Sửa" }} phòng ban</h2>
+
+  {% set d = department if department is defined else None %}
+
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Mã phòng ban</label>
+      <input
+        type="text"
+        name="code"
+        class="form-control"
+        value="{{ d.code if d else '' }}"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Tên phòng ban</label>
+      <input
+        type="text"
+        name="name"
+        class="form-control"
+        value="{{ d.name if d else '' }}"
+        required
+      />
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success">Lưu</button>
+      <a
+        href="{{ url_for('department_web.departments_list') }}"
+        class="btn btn-secondary"
+        >Hủy</a
+      >
+    </div>
+  </form>
+</div>
+{% endblock %}

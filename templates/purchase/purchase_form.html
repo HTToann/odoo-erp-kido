@@ -1,0 +1,156 @@
+{% extends "baseIndex.html" %}
+{% block title %}{{ "Tạo" if action == "add" else "Sửa" }} Đơn mua hàng{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ "Tạo" if action == "add" else "Sửa" }} Đơn mua hàng</h2>
+
+  <form method="post" class="row g-3">
+    {# Hidden vq_id nếu mở từ VQ #}
+    {% if prefill and prefill.vq_id %}
+      <input type="hidden" name="vq_id" value="{{ prefill.vq_id }}">
+      <div class="col-12">
+        <div class="alert alert-info py-2">
+          Tạo từ báo giá VQ#{{ prefill.vq_id }} — đã đổ sẵn NCC & tổng tiền.
+        </div>
+      </div>
+    {% elif po and po.vq_id %}
+      <input type="hidden" name="vq_id" value="{{ po.vq_id }}">
+    {% endif %}
+
+    <div class="col-md-4">
+      <label class="form-label">Mã đơn (PO No.)</label>
+      <input name="po_no" class="form-control"
+             value="{% if po %}{{ po.po_no }}{% elif prefill %}{{ prefill.suggest_po_no }}{% else %}{% endif %}"
+             required>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Ngày đặt</label>
+      <input type="date" name="order_date" class="form-control"
+             value="{{ po.order_date.strftime('%Y-%m-%d') if po and po.order_date else '' }}">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Ngày dự kiến</label>
+      <input type="date" name="expected_date" class="form-control"
+             value="{{ po.expected_date.strftime('%Y-%m-%d') if po and po.expected_date else '' }}">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Nhà cung cấp</label>
+      <select name="supplier_id" class="form-select" required>
+        <option value="">-- chọn --</option>
+        {% for s in suppliers %}
+          {% set selected = (po and po.supplier_id==s.id) or (prefill and prefill.supplier_id==s.id) %}
+          <option value="{{ s.id }}" {% if selected %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Trạng thái</label>
+      {% if po %}
+        {% set st = po.status|lower if po.status is string else po.status.value|lower %}
+      {% else %}
+        {% set st = 'draft' %}
+      {% endif %}
+      <select name="status" class="form-select">
+      {% if current_user.has_role(UserRole.BUYER) %}
+        <option value="draft" {% if st=='draft' %}selected{% endif %}>draft</option>
+      {% else %}
+        <option value="draft" {% if st=='draft' %}selected{% endif %}>draft</option>
+        <option value="confirmed" {% if st=='confirmed' %}selected{% endif %}>confirmed</option>
+        <option value="completed" {% if st=='completed' %}selected{% endif %}>completed</option>
+        <option value="cancelled" {% if st=='cancelled' %}selected{% endif %}>cancelled</option>
+      {% endif %}
+    </select>
+    </div>
+
+      {# ===== Giá trị mặc định cho tính toán ===== #}
+    {% set _subtotal = (po.subtotal if po else (prefill.subtotal if prefill else 0)) or 0 %}
+    {% set _tax      = (po.tax      if po else (prefill.tax      if prefill else 0)) or 0 %}
+    {% set _total    = (po.total    if po else (prefill.total    if prefill else 0)) or 0 %}
+
+    {# lấy rate từ dữ liệu nếu có: ưu tiên tax/subtotal; sau đó prefill['tax_rate']; mặc định 0.10 #}
+    {% if _subtotal %}
+      {% set _rate_guess = _tax / _subtotal %}
+    {% elif prefill and ('tax_rate' in prefill) and prefill['tax_rate'] is not none %}
+      {% set _rate_guess = prefill['tax_rate'] %}
+    {% else %}
+      {% set _rate_guess = 0.10 %}
+    {% endif %}
+
+    <div class="col-md-3">
+      <label class="form-label">Tổng tiền (subtotal)</label>
+      <input id="po-subtotal" type="number" step="0.01" name="subtotal" class="form-control"
+             value="{{ '%.2f'|format(_subtotal) }}">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Thuế suất (%)</label>
+      <select id="po-tax-rate" name="tax_rate" class="form-select"
+        data-default-rate="{{ (_rate_guess or 0)|float }}">
+        <option value="0">0%</option>
+        <option value="0.0500">5%</option>
+        <option value="0.0800">8%</option>
+        <option value="0.1000">10%</option>
+      </select>
+      <div class="form-text">Hệ thống sẽ tự tính tiền thuế & tổng cộng.</div>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Thuế (tax)</label>
+      <input id="po-tax" type="number" step="0.01" name="tax" class="form-control"
+             value="{{ '%.2f'|format(_tax) }}" readonly>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Tổng cộng</label>
+      <input id="po-total" type="number" step="0.01" name="total" class="form-control"
+             value="{{ '%.2f'|format(_total) }}" readonly>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-success">Lưu</button>
+      <a href="{{ url_for('purchase_web.purchases_list') }}" class="btn btn-secondary">Hủy</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const subtotalEl = document.getElementById('po-subtotal');
+  const rateEl     = document.getElementById('po-tax-rate');
+  const taxEl      = document.getElementById('po-tax');
+  const totalEl    = document.getElementById('po-total');
+
+  // Chọn giá trị mặc định cho tax rate (từ server -> data-default-rate)
+  const defRate = parseFloat(rateEl.dataset.defaultRate || '0.1');
+  // map về 0/0.05/0.08/0.1 nếu gần bằng (tránh sai số)
+  function snapRate(r){
+    const opts = [0, 0.05, 0.08, 0.10];
+    let best = 0, dmin = 1e9;
+    for(const x of opts){ const d = Math.abs(x - r); if(d < dmin){ dmin = d; best = x; } }
+    return best;
+  }
+  rateEl.value = snapRate(defRate).toFixed(4);
+
+  function calc(){
+    const subtotal = parseFloat(subtotalEl.value || '0');
+    const rate     = parseFloat(rateEl.value || '0');
+    const tax      = subtotal * rate;
+    const total    = subtotal + tax;
+    taxEl.value   = tax.toFixed(2);
+    totalEl.value = total.toFixed(2);
+  }
+
+  subtotalEl.addEventListener('input', calc);
+  rateEl.addEventListener('change', calc);
+
+  // Khởi tạo
+  calc();
+})();
+</script>
+{% endblock %}

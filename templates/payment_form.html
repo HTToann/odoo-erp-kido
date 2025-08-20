@@ -1,0 +1,43 @@
+{% extends "baseIndex.html" %}
+{% block title %}{{ "Tạo" if action=="add" else "Sửa" }} Thanh toán{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ "Tạo" if action=="add" else "Sửa" }} Thanh toán</h2>
+
+  <form method="post" class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Hóa đơn (INV)</label>
+      <select name="invoice_id" class="form-select" required>
+        <option value="">-- chọn hóa đơn --</option>
+        {% for iv in invoices %}
+          <option value="{{ iv.id }}"
+            {% if payment and payment.invoice_id==iv.id %}selected{% endif %}>
+            INV#{{ iv.id }} — {{ iv.supplier.name if iv.supplier else "" }} — {{ '{:,.2f}'.format(iv.total or 0) }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Số tiền</label>
+      <input type="number" name="amount" step="0.01" min="0"
+             class="form-control"
+             value="{{ payment.amount if payment else '' }}" required>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Phương thức</label>
+      {% set m = payment.method if payment else 'bank' %}
+      <select name="method" class="form-select">
+        <option value="bank" {% if m=='bank' %}selected{% endif %}>Chuyển khoản</option>
+        <option value="cash" {% if m=='cash' %}selected{% endif %}>Tiền mặt</option>
+      </select>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-success">Lưu</button>
+      <a href="{{ url_for('invoice.invoice_list') }}" class="btn btn-secondary">Hủy</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
