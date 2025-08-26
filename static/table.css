@@ -1,0 +1,83 @@
+/* ===== Table Skin (tbs-*) — dùng chung cho mọi bảng ===== */
+:root{
+  --tbs-row-gap: 8px;
+  --tbs-border: rgba(0,0,0,.06);
+  --tbs-header-bg: #f7f9fc;
+  --tbs-header-fg: #6b778c;
+}
+
+/* Khung thẻ bọc bảng (tùy dùng) */
+.tbs-card{
+  border:1px solid var(--bs-border-color);
+  border-radius:16px;
+  background: var(--bs-body-bg);
+  box-shadow: 0 6px 20px rgba(0,0,0,.06);
+  overflow:hidden;
+}
+
+/* Thanh công cụ phía trên (tùy dùng) */
+.tbs-toolbar{
+  display:flex; gap:.75rem; align-items:center; justify-content:space-between;
+  padding:.85rem 1rem; border-bottom:1px solid var(--bs-border-color);
+  background: linear-gradient(180deg, rgba(35,47,74,.03), transparent);
+}
+.tbs-search{ position:relative; }
+.tbs-search .bi-search{ position:absolute; left:.65rem; top:50%; transform:translateY(-50%); opacity:.55; pointer-events:none; }
+.tbs-search input{ padding-left:2rem; min-width:240px; }
+
+/* Bảng “mềm” như mockup */
+.table.tbs-table{
+  border-collapse: separate !important;
+  border-spacing: 0 var(--tbs-row-gap) !important;
+  border:0 !important; margin:0; background:transparent;
+}
+.table.tbs-table thead th{
+  background: var(--tbs-header-bg) !important;
+  color: var(--tbs-header-fg) !important;
+  border:0 !important; font-weight:700; padding:12px 16px;
+  box-shadow: inset 0 -1px 0 var(--tbs-border);
+}
+/* xóa viền mặc định .table-bordered */
+.table.tbs-table.table-bordered > :not(caption) > * > *{ border-width:0 !important; }
+
+/* mỗi hàng là thẻ trắng */
+.table.tbs-table tbody tr > td{
+  background:#fff;
+  padding:14px 16px; vertical-align: middle;
+  border-top:1px solid var(--tbs-border) !important;
+  border-bottom:1px solid var(--tbs-border) !important;
+}
+/* bo 2 đầu hàng + viền bên */
+.table.tbs-table tbody tr > td:first-child{
+  border-left:1px solid var(--tbs-border) !important;
+  border-top-left-radius:10px; border-bottom-left-radius:10px;
+}
+.table.tbs-table tbody tr > td:last-child{
+  border-right:1px solid var(--tbs-border) !important;
+  border-top-right-radius:10px; border-bottom-right-radius:10px;
+  text-align:right; white-space:nowrap;
+}
+/* hover dịu */
+.table.tbs-table.table-hover tbody tr:hover > td{ background:#f8fbff; }
+
+/* Phụ trợ hay dùng lại */
+.tbs-badge{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-weight:600; font-size:.9rem;
+  background: rgba(var(--bs-primary-rgb), .08);
+  color: rgb(var(--bs-primary-rgb));
+  border:1px solid rgba(var(--bs-primary-rgb), .25);
+  padding:.2rem .5rem; border-radius:.5rem;
+}
+.tbs-avatar{
+  width:28px; height:28px; border-radius:50%;
+  display:grid; place-items:center; font-weight:700; font-size:.8rem;
+  color:#1f2a44;
+  background: radial-gradient(120% 120% at 30% 20%, #cfe2ff, #dceafe 60%, #eef5ff 100%);
+  border:1px solid #bcd3ff;
+}
+
+/* Giao diện gọn: chỉ cần thêm .table-sm vào bảng (Bootstrap mặc định) */
+@media (max-width: 576px){
+  .tbs-search input{ min-width:160px; }
+}
