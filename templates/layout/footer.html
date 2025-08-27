@@ -1,7 +1,39 @@
-<footer class="bg-light text-center py-3 mt-auto border-top">
-  <div class="container">
-    <p class="mb-0">
-      &copy; {{ current_year }} ERP Kido - Bánh Trung Thu | Phiên bản 1.0
-    </p>
+<footer class="footer-modern mt-auto border-top">
+  <div class="container py-3 d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+    <div class="text-light small">
+      &copy; {{ current_year }} <strong>ERP Kido</strong> - Bánh Trung Thu
+      <span class="text-muted">| Phiên bản 1.0</span>
+    </div>
+
+    <ul class="nav justify-content-center justify-content-md-end gap-3">
+      <li class="nav-item">
+        <a href="#" class="nav-link px-0 small text-light">Chính sách</a>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link px-0 small text-light">Hỗ trợ</a>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link px-0 small text-light">Liên hệ</a>
+      </li>
+    </ul>
   </div>
 </footer>
+
+<style>
+.footer-modern {
+  background-color: #232f4a; /* đồng bộ màu với header */
+}
+.footer-modern .nav-link {
+  color: rgba(255,255,255,.8);
+  transition: color .2s ease;
+}
+.footer-modern .nav-link:hover {
+  color: #fff;
+}
+.footer-modern .text-light {
+  color: rgba(255,255,255,.85) !important;
+}
+.footer-modern .text-muted {
+  color: rgba(255,255,255,.55) !important;
+}
+</style>
