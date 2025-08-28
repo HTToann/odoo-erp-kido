@@ -21,27 +21,38 @@ def vq_list():
 @vq_bp.route("/vqs/add", methods=["GET", "POST"])
 @login_required
 def vq_add():
-    """Form tạo VQ trống (hoặc prefill với ?from_rfq=<id>)."""
-    from_rfq = request.args.get("from_rfq")
     prefill_lines = None
     preselected_rfq_id = None
-    if from_rfq:
-        rfq = rfq_dao.get_rfq(int(from_rfq))
-        if rfq and rfq.lines:
-            prefill_lines = [
-                {"material_id": ln.material_id, "qty": float(ln.qty), "price": 0}
-                for ln in rfq.lines
-            ]
-            preselected_rfq_id = rfq.id
 
     if request.method == "POST":
-        rfq_id = request.form.get("rfq_id")
-        supplier_id = request.form.get("supplier_id")
-        status = request.form.get("status", "received")
+        rfq_id = request.form.get("rfq_id") or None
+        supplier_id = request.form.get("supplier_id") or None
+        status = (request.form.get("status") or "RECEIVED").upper()
         lines = _extract_lines(request)
-        vq_dao.create_vq(rfq_id, supplier_id, status, lines)
-        flash("Nhập báo giá thành công", "success")
-        return redirect(url_for("vq_web.vq_list"))
+
+        try:
+            vq_dao.create_vq(rfq_id, supplier_id, status, lines)
+            flash("Nhập báo giá thành công", "success")
+            return redirect(url_for("vq_web.vq_list"))
+        except ValueError as e:
+            # Hiển thị đẹp, không rơi vào debugger
+            flash(str(e), "danger")
+            # Giữ lại dữ liệu user vừa nhập để hiển thị lại form
+            prefill_lines = lines
+            preselected_rfq_id = int(rfq_id) if rfq_id else None
+            # KHÔNG redirect để khỏi mất form data; re-render ngay bên dưới
+
+    else:
+        # Prefill khi đi từ RFQ
+        from_rfq = request.args.get("from_rfq")
+        if from_rfq:
+            rfq = rfq_dao.get_rfq(int(from_rfq))
+            if rfq and rfq.lines:
+                prefill_lines = [
+                    {"material_id": ln.material_id, "qty": float(ln.qty), "price": 0}
+                    for ln in rfq.lines
+                ]
+                preselected_rfq_id = rfq.id
 
     rfqs = rfq_dao.list_rfqs()
     suppliers = supplier_dao.list_suppliers()

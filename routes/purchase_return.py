@@ -18,9 +18,16 @@ def return_add():
     if request.method == "POST":
         gr_id = request.form.get("gr_id")
         status = request.form.get("status", "draft")
-        lines = _extract_lines(request)  # gr_line_id, qty, reason
-        ret_dao.create_return(gr_id, status, lines)
-        flash("Tạo phiếu trả hàng thành công", "success")
+        lines = _extract_lines(request)
+        action = request.form.get("action")  # 'save' or 'finalize'
+        # nếu bấm "Chốt & Ghi kho" thì ép status='posted'
+        if action == "finalize":
+            status = "posted"
+        try:
+            ret_dao.create_return(gr_id, status, lines)
+            flash("Tạo phiếu trả hàng thành công", "success")
+        except Exception as ex:
+            flash(str(ex), "danger")
         return redirect(url_for("preturn_web.return_list"))
     grs = gr_dao.list_grs()
     gr_lines = qc_dao.list_all_gr_lines()
@@ -44,8 +51,14 @@ def return_edit(return_id: int):
         gr_id = request.form.get("gr_id")
         status = request.form.get("status", "draft")
         lines = _extract_lines(request)
-        ret_dao.update_return(return_id, gr_id, status, lines)
-        flash("Cập nhật phiếu trả hàng thành công", "success")
+        action = request.form.get("action")
+        if action == "finalize":
+            status = "posted"
+        try:
+            ret_dao.update_return(return_id, gr_id, status, lines)
+            flash("Cập nhật phiếu trả hàng thành công", "success")
+        except Exception as ex:
+            flash(str(ex), "danger")
         return redirect(url_for("preturn_web.return_list"))
     grs = gr_dao.list_grs()
     gr_lines = qc_dao.list_all_gr_lines()

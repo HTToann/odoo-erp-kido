@@ -6,6 +6,8 @@ from db.models.purchase_requisition import (
     PRLine,
     PurchaseRequisitionStatus,
 )
+from flask_login import current_user
+from db.models.user import UserRole
 
 
 def get_pr_lines_as_dicts(pr_id: int) -> List[Dict]:
@@ -45,15 +47,50 @@ def create_pr(requester_id: int, note: str | None, lines: List[Dict]):
     return pr
 
 
-def update_pr(pr_id: int, requester_id: int, note: str | None, lines: List[Dict]):
+def update_pr(
+    pr_id: int,
+    requester_id: int,
+    note: str | None,
+    status: str,
+    lines: list[dict],
+):
     pr = PurchaseRequisition.query.get_or_404(pr_id)
+
+    # 🚫 PR đã APPROVED -> khóa sửa với mọi role
+    if pr.status == PurchaseRequisitionStatus.APPROVED:
+        raise ValueError("PR đã APPROVED, không thể chỉnh sửa.")
+
+    raw_role = getattr(current_user, "role", None)
+    role_value = (
+        raw_role.value if hasattr(raw_role, "value") else str(raw_role or "").upper()
+    )
+    is_buyer = (role_value == UserRole.BUYER.value) or (role_value == "BUYER")
+
+    status_upper = (status or "").upper()
+    is_setting_to_approved = status_upper == PurchaseRequisitionStatus.APPROVED.value
+
+    # BUYER: cấm chuyển sang APPROVED
+    if is_buyer and is_setting_to_approved:
+        raise ValueError("Không được chuyển PR sang trạng thái APPROVED.")
+
+    # ---- update fields ----
     pr.requester_id = int(requester_id)
     pr.note = note
-    # clear lines cũ
+    try:
+        pr.status = (
+            PurchaseRequisitionStatus(status_upper) if status_upper else pr.status
+        )
+    except ValueError:
+        pr.status = pr.status or PurchaseRequisitionStatus.DRAFT
+
     PRLine.query.filter_by(pr_id=pr.id).delete()
     for ln in lines:
         db.session.add(
-            PRLine(pr_id=pr.id, material_id=ln["material_id"], qty=ln["qty"])
+            PRLine(
+                pr_id=pr.id,
+                material_id=int(ln["material_id"]),
+                qty=float(ln["qty"]),
+            )
         )
     _commit()
     return pr

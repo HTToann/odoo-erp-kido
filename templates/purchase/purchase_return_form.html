@@ -79,8 +79,12 @@
 
     <div class="d-flex gap-2">
       <button type="button" id="add-line" class="btn btn-outline-secondary">+ Thêm dòng</button>
-      <button class="btn btn-success">Lưu</button>
-      <a href="{{ url_for('preturn_web.return_list') }}" class="btn btn-secondary">Hủy</a>
+      <button name="action" value="save" class="btn btn-secondary">Lưu</button>
+      <button name="action" value="finalize" class="btn btn-success"
+              onclick="return confirm('Chốt phiếu và ghi kho âm (RETURN)?');">
+        Chốt & Ghi kho
+      </button>
+      <a href="{{ url_for('preturn_web.return_list') }}" class="btn btn-outline-secondary">Hủy</a>
     </div>
   </form>
 </div>

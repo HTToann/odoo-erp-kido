@@ -17,16 +17,26 @@ class VendorInvoice(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     supplier_id = db.Column(db.Integer, db.ForeignKey("supplier.id"), nullable=False)
     po_id = db.Column(db.Integer, db.ForeignKey("purchase_order.id"))
+    issued_at = db.Column(db.Date)  # ngày hóa đơn (nếu cần, form có thể bổ sung)
     status = db.Column(
-        db.Enum(PaymentStatus, name="paymentstatus"),
-        default=PaymentStatus.DRAFT,
-        nullable=False,
+        db.Enum(PaymentStatus), default=PaymentStatus.DRAFT, nullable=False
     )
-    total = db.Column(db.Numeric(18, 2), default=0)
-    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    total = db.Column(db.Numeric(18, 2), default=0)  # tổng tiền từ các line
 
     supplier = db.relationship("Supplier")
     po = db.relationship("PurchaseOrder")
+    lines = db.relationship(
+        "InvoiceLine",
+        backref=db.backref("invoice"),
+        cascade="all, delete-orphan",
+        lazy="joined",
+    )
+    payments = db.relationship(
+        "Payment",
+        backref=db.backref("invoice"),
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class InvoiceLine(db.Model):
@@ -37,14 +47,11 @@ class InvoiceLine(db.Model):
         db.ForeignKey("vendor_invoice.id", ondelete="CASCADE"),
         nullable=False,
     )
-    material_id = db.Column(db.Integer, db.ForeignKey("material.id"))
-    qty = db.Column(db.Numeric(18, 3), nullable=False)
-    price = db.Column(db.Numeric(18, 2), nullable=False)
-    line_total = db.Column(db.Numeric(18, 2), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey("material.id"), nullable=False)
+    qty = db.Column(db.Numeric(18, 3), default=0)
+    price = db.Column(db.Numeric(18, 2), default=0)
+    line_total = db.Column(db.Numeric(18, 2), default=0)
 
-    invoice = db.relationship(
-        "VendorInvoice", backref=db.backref("lines", cascade="all, delete-orphan")
-    )
     material = db.relationship("Material")
 
 
@@ -52,9 +59,11 @@ class Payment(db.Model):
     __tablename__ = "payment"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     invoice_id = db.Column(
-        db.Integer, db.ForeignKey("vendor_invoice.id"), nullable=False
+        db.Integer,
+        db.ForeignKey("vendor_invoice.id", ondelete="CASCADE"),
+        nullable=False,
     )
     amount = db.Column(db.Numeric(18, 2), nullable=False)
+    method = db.Column(db.String(30))  # bank/cash/...
     paid_at = db.Column(db.DateTime, default=datetime.utcnow)
-    method = db.Column(db.String(30))
-    invoice = db.relationship("VendorInvoice")
+    note = db.Column(db.Text)

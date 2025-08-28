@@ -5,6 +5,7 @@ from flask_login import LoginManager
 
 from dotenv import load_dotenv
 from db.models.user import User, UserRole
+from db.models.purchase_requisition import PurchaseRequisitionStatus
 from flask_login import login_required
 from blueprint import blue_print
 from admin.setup import init_admin
@@ -24,7 +25,10 @@ login.login_view = "auth.login"
 
 @app.context_processor
 def inject_enums():
-    return dict(UserRole=UserRole)
+    return {
+        "PurchaseRequisitionStatus": PurchaseRequisitionStatus,
+        "UserRole": UserRole,
+    }
 
 
 @login.user_loader

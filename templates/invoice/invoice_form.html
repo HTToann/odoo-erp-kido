@@ -1,42 +1,57 @@
 {% extends "baseIndex.html" %}
 {% block title %}{{ "Nhập" if action=="add" else "Sửa" }} Hóa đơn NCC{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
   <h2 class="mb-3">{{ "Nhập" if action=="add" else "Sửa" }} Hóa đơn nhà cung cấp</h2>
 
-  <form method="post">
-    <div class="row g-3 mb-3">
+  {# Tính sẵn: đã có payment? nếu có → có thể muốn khóa line (tuỳ rule backend) #}
+  {% set has_payment = (inv.payments|length > 0) if inv else False %}
+  {% set can_edit_lines = not has_payment %}
+
+  {# Build sẵn chuỗi <option> vật tư để dùng cho mọi dòng #}
+  {% set mat_options %}
+    <option value="">-- chọn --</option>
+    {% for m in materials %}
+      <option value="{{ m.id }}">{{ (m.sku or '') ~ (' - ' if m.sku and m.name else '') ~ (m.name or '') }}</option>
+    {% endfor %}
+  {% endset %}
+
+  <form method="post" id="inv-form">
+    <div class="row g-3 mb-2">
       <div class="col-md-4">
         <label class="form-label">Nhà cung cấp</label>
-        <select name="supplier_id" class="form-select" required>
+        <select name="supplier_id" class="form-select" required {{ 'disabled' if inv and inv.po_id }}>
           <option value="">-- chọn --</option>
           {% for s in suppliers %}
-            <option value="{{ s.id }}" {% if inv and inv.supplier_id==s.id %}selected{% endif %}>
-              {{ s.name }}
-            </option>
+            <option value="{{ s.id }}" {% if inv and inv.supplier_id==s.id %}selected{% endif %}>{{ s.name }}</option>
           {% endfor %}
         </select>
+        <input type="hidden" name="supplier_id_hidden" id="supplier_id_hidden">
+        <div class="form-text text-muted" id="supplier-help" style="display: {{ 'block' if inv and inv.po_id else 'none' }}">
+          NCC bị khóa theo PO.
+        </div>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-md-3">
+        <label class="form-label">Ngày hóa đơn</label>
+        {% set issued = inv.issued_at.strftime('%Y-%m-%d') if inv and inv.issued_at else '' %}
+        <input type="date" name="issued_at" class="form-control" value="{{ issued }}">
+      </div>
+
+      <div class="col-md-3">
         <label class="form-label">Đơn mua (PO)</label>
-        <select name="po_id" class="form-select">
+        <select name="po_id" id="po-id" class="form-select">
           <option value="">-- không --</option>
           {% for p in purchases %}
-            <option value="{{ p.id }}" {% if inv and inv.po_id==p.id %}selected{% endif %}>
-              {{ p.po_no }}
-            </option>
+            <option value="{{ p.id }}" {% if inv and inv.po_id==p.id %}selected{% endif %}>{{ p.po_no }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-md-2">
         <label class="form-label">Trạng thái</label>
-        {% if inv %}
-          {% set st = inv.status|lower if inv.status is string else inv.status.value|lower %}
-        {% else %}
-          {% set st = 'draft' %}
-        {% endif %}
+        {% set st = inv.status|lower if inv else 'draft' %}
         <select name="status" class="form-select">
           <option value="draft"           {% if st=='draft' %}selected{% endif %}>draft</option>
           <option value="validated"       {% if st=='validated' %}selected{% endif %}>validated</option>
@@ -47,7 +62,15 @@
       </div>
     </div>
 
+    <div class="row g-2 mb-3">
+      <div class="col-12 d-flex gap-2">
+        <button type="button" id="btn-fill-from-po" class="btn btn-outline-primary">Nạp dòng từ PO đã chọn</button>
+        <button type="button" id="btn-fill-from-gr" class="btn btn-outline-secondary">Nạp dòng từ GR (nhập GR ID)</button>
+      </div>
+    </div>
+
     <h5>Dòng hóa đơn</h5>
+
     <div class="table-responsive mb-3">
       <table class="table table-bordered align-middle" id="inv-lines">
         <thead class="table-light">
@@ -61,41 +84,43 @@
         </thead>
         <tbody>
           {% set lines = inv.lines if inv else [] %}
-          {% for ln in lines %}
-            {% set i = loop.index0 %}
-            {% set line_total = ((ln.qty or 0) * (ln.price or 0)) %}
-            <tr>
-              <td>
-                <select name="lines[{{ i }}][material_id]" class="form-select" required>
-                  <option value="">-- chọn --</option>
-                  {% for m in materials %}
-                    <option value="{{ m.id }}" {% if ln.material_id==m.id %}selected{% endif %}>
-                      {{ m.sku }} - {{ m.name }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </td>
-              <td><input name="lines[{{ i }}][qty]" type="number" step="0.001" min="0" class="form-control" value="{{ ln.qty }}"></td>
-              <td><input name="lines[{{ i }}][price]" type="number" step="0.01" min="0" class="form-control" value="{{ ln.price }}"></td>
-              <td class="text-end fw-semibold line-total">{{ '%.2f'|format(line_total) }}</td>
-              <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
-            </tr>
+          {% if lines and lines|length %}
+            {% for ln in lines %}
+              {% set i = loop.index0 %}
+              {% set line_total = ((ln.qty or 0) * (ln.price or 0)) %}
+              <tr>
+                <td>
+                  <select name="lines[{{ i }}][material_id]" class="form-select" required {{ 'disabled' if not can_edit_lines }}>
+                    {{ mat_options|safe }}
+                  </select>
+                  <script>
+                    (function(){ 
+                      const sel = document.currentScript.previousElementSibling; 
+                      sel.value = "{{ ln.material_id }}"; 
+                    })();
+                  </script>
+                </td>
+                <td><input name="lines[{{ i }}][qty]"   type="number" step="0.001" min="0" class="form-control" value="{{ ln.qty }}" {{ 'readonly' if not can_edit_lines }}></td>
+                <td><input name="lines[{{ i }}][price]" type="number" step="0.01"  min="0" class="form-control" value="{{ ln.price }}" {{ 'readonly' if not can_edit_lines }}></td>
+                <td class="text-end fw-semibold line-total">{{ '%.2f'|format(line_total) }}</td>
+                <td>
+                  <button type="button" class="btn btn-outline-danger btn-sm remove-line" {{ 'disabled' if not can_edit_lines }}>X</button>
+                </td>
+              </tr>
+            {% endfor %}
           {% else %}
             <tr>
               <td>
                 <select name="lines[0][material_id]" class="form-select" required>
-                  <option value="">-- chọn --</option>
-                  {% for m in materials %}
-                    <option value="{{ m.id }}">{{ m.sku }} - {{ m.name }}</option>
-                  {% endfor %}
+                  {{ mat_options|safe }}
                 </select>
               </td>
-              <td><input name="lines[0][qty]" type="number" step="0.001" min="0" class="form-control" value="1"></td>
-              <td><input name="lines[0][price]" type="number" step="0.01" min="0" class="form-control" value="0"></td>
+              <td><input name="lines[0][qty]"   type="number" step="0.001" min="0" class="form-control" value="1"></td>
+              <td><input name="lines[0][price]" type="number" step="0.01"  min="0" class="form-control" value="0"></td>
               <td class="text-end fw-semibold line-total">0.00</td>
               <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
             </tr>
-          {% endfor %}
+          {% endif %}
         </tbody>
         <tfoot>
           <tr>
@@ -108,66 +133,146 @@
     </div>
 
     <div class="d-flex gap-2">
-      <button type="button" id="add-line" class="btn btn-outline-secondary">+ Thêm dòng</button>
+      <button type="button" id="add-line" class="btn btn-outline-secondary" {{ 'disabled' if not can_edit_lines }}>+ Thêm dòng</button>
       <button class="btn btn-success">Lưu</button>
       <a href="{{ url_for('invoice_web.invoice_list') }}" class="btn btn-secondary">Hủy</a>
     </div>
   </form>
+
+  {# Template HTML cho 1 dòng mới, giảm rủi ro lỗi JS string #}
+  <template id="row-tpl">
+    <tr>
+      <td><select class="form-select" required>{{ mat_options|safe }}</select></td>
+      <td><input type="number" step="0.001" min="0" class="form-control" value="1"></td>
+      <td><input type="number" step="0.01"  min="0" class="form-control" value="0"></td>
+      <td class="text-end fw-semibold line-total">0.00</td>
+      <td><button type="button" class="btn btn-outline-danger btn-sm remove-line">X</button></td>
+    </tr>
+  </template>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function(){
-  const tbl = document.getElementById('inv-lines').querySelector('tbody');
-  const addBtn = document.getElementById('add-line');
+  const form    = document.getElementById('inv-form');
+  const tblBody = document.querySelector('#inv-lines tbody');
+  const addBtn  = document.getElementById('add-line');
   const totalEl = document.getElementById('inv-total');
+  const poSel   = document.getElementById('po-id');
+  const supSel  = document.querySelector('select[name="supplier_id"]');
+  const supHelp = document.getElementById('supplier-help');
+  const rowTpl  = document.getElementById('row-tpl');
 
+  // Luôn đặt lại name cho 1 dòng theo thứ tự: select -> qty -> price
   function reindex(){
-    [...tbl.querySelectorAll('tr')].forEach((tr,i)=>{
-      tr.querySelectorAll('select,input').forEach(el=>{
-        el.name = el.name.replace(/lines\[\d+\]/, `lines[${i}]`);
-      });
+    [...tblBody.querySelectorAll('tr')].forEach((tr,i)=>{
+      const sel   = tr.querySelector('select');
+      const nums  = tr.querySelectorAll('input[type="number"]');
+      if (sel)  sel.name         = `lines[${i}][material_id]`;
+      if (nums[0]) nums[0].name  = `lines[${i}][qty]`;
+      if (nums[1]) nums[1].name  = `lines[${i}][price]`;
     });
   }
 
+  // Tính tổng – dùng selector kết thúc $= để tránh nhầm
   function calc(){
     let sum = 0;
-    tbl.querySelectorAll('tr').forEach(tr=>{
-      const qty   = parseFloat(tr.querySelector('input[name*="[qty]"]').value || 0);
-      const price = parseFloat(tr.querySelector('input[name*="[price]"]').value || 0);
-      const lt = (qty * price) || 0;
+    tblBody.querySelectorAll('tr').forEach(tr=>{
+      const qtyEl   = tr.querySelector('input[name$="[qty]"]');
+      const priceEl = tr.querySelector('input[name$="[price]"]');
+      const qty   = Number(qtyEl?.value)   || 0;
+      const price = Number(priceEl?.value) || 0;
+      const lt = qty * price;
       tr.querySelector('.line-total').textContent = lt.toFixed(2);
       sum += lt;
     });
     totalEl.textContent = sum.toFixed(2);
   }
 
-  addBtn.addEventListener('click', ()=>{
-    const tr = tbl.querySelector('tr:last-child').cloneNode(true);
-    tr.querySelectorAll('input').forEach(i=> i.value = i.name.includes('[qty]') ? '1' : '0');
-    tr.querySelectorAll('select').forEach(s=> s.selectedIndex = 0);
-    tr.querySelector('.line-total').textContent = '0.00';
-    tbl.appendChild(tr);
+  function addRow({material_id='', qty=1, price=0}={}){
+    const frag  = rowTpl.content.cloneNode(true);
+    const tr    = frag.querySelector('tr');
+    const sel   = tr.querySelector('select');
+    const nums  = tr.querySelectorAll('input[type="number"]');
+    sel.value      = String(material_id || '');
+    nums[0].value  = qty;
+    nums[1].value  = price;
+    tblBody.appendChild(tr);
+  }
+
+  function fillLines(lines){
+    if (!lines?.length) return;
+    tblBody.innerHTML = '';
+    lines.forEach(ln => addRow(ln));
     reindex(); calc();
-  });
+  }
 
-  tbl.addEventListener('input', e=>{
-    if(e.target.matches('input')) calc();
-  });
-
-  tbl.addEventListener('click', e=>{
-    if(e.target.classList.contains('remove-line')){
-      const rows = tbl.querySelectorAll('tr');
-      if(rows.length > 1){
-        e.target.closest('tr').remove();
-        reindex(); calc();
-      }
+  // Thêm / xóa
+  addBtn?.addEventListener('click', ()=>{ addRow(); reindex(); calc(); });
+  tblBody.addEventListener('click', e=>{
+    if (e.target.classList.contains('remove-line')){
+      const rows = tblBody.querySelectorAll('tr');
+      if (rows.length > 1) { e.target.closest('tr').remove(); reindex(); calc(); }
     }
   });
 
-  // tính tổng ban đầu
-  calc();
+  // Tính tổng khi thay đổi
+  const onAnyChange = (e)=>{ if (e.target.matches('input,select')) calc(); };
+  tblBody.addEventListener('input', onAnyChange);
+  tblBody.addEventListener('change', onAnyChange);
+  calc(); // lần đầu
+
+  // PO ⇄ Supplier lock
+  async function syncSupplierByPO(){
+    const poId = poSel.value;
+    if(!poId){
+      supSel.disabled = false; supHelp.style.display='none'; return;
+    }
+    try{
+      const res = await fetch(`/invoices/api/po/${poId}/supplier`);
+      if(!res.ok) return;
+      const data = await res.json();
+      if (data?.supplier_id){
+        supSel.value = String(data.supplier_id);
+        document.getElementById('supplier_id_hidden').value = String(data.supplier_id);
+        supSel.disabled = true; supHelp.style.display='';
+      }
+    }catch(_){}
+  }
+  poSel?.addEventListener('change', syncSupplierByPO);
+  syncSupplierByPO();
+
+  // Đảm bảo supplier được post khi select disabled
+  form.addEventListener('submit', ()=>{
+    const hidden = document.getElementById('supplier_id_hidden');
+    if (supSel.disabled) { hidden.value = supSel.value; supSel.disabled=false; }
+  });
+
+  // Nạp từ PO
+  document.getElementById('btn-fill-from-po')?.addEventListener('click', async ()=>{
+    const poId = poSel.value ? parseInt(poSel.value) : null;
+    if(!poId) return alert('Vui lòng chọn PO trước.');
+    try{
+      const res = await fetch(`/invoices/api/po/${poId}/lines`);
+      const data = await res.json();
+      if(!data?.length) return alert('PO không có dòng.');
+      fillLines(data);
+    }catch{ alert('Không nạp được dòng từ PO.'); }
+  });
+
+  // Nạp từ GR
+  document.getElementById('btn-fill-from-gr')?.addEventListener('click', async ()=>{
+    const grId = parseInt(prompt('Nhập GR ID cần nạp dòng:') || '');
+    if(!grId) return;
+    try{
+      const res = await fetch(`/invoices/api/gr/${grId}/lines`);
+      const data = await res.json();
+      if(!data?.length) return alert('GR không có dòng.');
+      fillLines(data);
+    }catch{ alert('Không nạp được dòng từ GR.'); }
+  });
+
 })();
 </script>
 {% endblock %}

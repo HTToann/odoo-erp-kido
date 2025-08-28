@@ -7,6 +7,10 @@ from sqlalchemy import func, case
 from configs import db
 from db.models.purchase import PurchaseOrder, PurchaseOrderItem, POStatus
 from db.models.goods_receipt import GoodsReceipt, GRLine, GRStatus
+from db.models.vendor_quotation import (
+    VendorQuotation,
+    VendorQuotationStatus,
+)
 
 
 def _to_po_status(value: str) -> POStatus:
@@ -28,7 +32,7 @@ def list_purchases() -> List[PurchaseOrder]:
     ).all()
 
 
-def list_purchases_confirmed():
+def list_purchases_confirmed() -> List[PurchaseOrder]:
     return (
         PurchaseOrder.query.filter(PurchaseOrder.status == POStatus.CONFIRMED)
         .order_by(PurchaseOrder.id.desc())
@@ -36,11 +40,11 @@ def list_purchases_confirmed():
     )
 
 
-def po_lines_with_remaining(po_id: int):
+def po_lines_with_remaining(po_id: int) -> List[dict]:
     """
-    Trả về list dict: {po_line_id, material_id, material, ordered, received, remaining}
+    Trả về list dict: {po_line_id, material_id, ordered, received, remaining}
+    - received = tổng GRLine.qty của các GR có status CHECKED/POSTED
     """
-    # ordered
     q = (
         db.session.query(
             PurchaseOrderItem.id.label("po_line_id"),
@@ -48,17 +52,17 @@ def po_lines_with_remaining(po_id: int):
             PurchaseOrderItem.qty.label("ordered"),
             func.coalesce(
                 func.sum(
-                    db.case(
+                    case(
                         (
                             GoodsReceipt.status.in_(
                                 [GRStatus.CHECKED, GRStatus.POSTED]
                             ),
                             GRLine.qty,
                         ),
-                        else_=0,
+                        else_=0.0,
                     )
                 ),
-                0,
+                0.0,
             ).label("received"),
         )
         .select_from(PurchaseOrderItem)
@@ -67,13 +71,14 @@ def po_lines_with_remaining(po_id: int):
         .filter(PurchaseOrderItem.po_id == po_id)
         .group_by(PurchaseOrderItem.id)
     )
+
     rows = []
     for r in q:
         remaining = float((r.ordered or 0) - (r.received or 0))
         rows.append(
             {
                 "po_line_id": r.po_line_id,
-                "material_id": r.material_id,
+                "material_id": int(r.material_id),
                 "ordered": float(r.ordered or 0),
                 "received": float(r.received or 0),
                 "remaining": max(0.0, remaining),
@@ -86,6 +91,45 @@ def get_po(po_id: int) -> Optional[PurchaseOrder]:
     return PurchaseOrder.query.get(po_id)
 
 
+# ---------------- helpers ----------------
+def _require_selected_vq(vq_id: int) -> VendorQuotation:
+    """Lấy VQ và đảm bảo VQ.SELECTED, nếu không raise lỗi."""
+    if not vq_id:
+        raise ValueError("Vui lòng chọn báo giá (VQ).")
+    vq = VendorQuotation.query.get_or_404(int(vq_id))
+    if vq.status != VendorQuotationStatus.SELECTED:
+        raise ValueError("Chỉ có thể tạo/cập nhật PO khi VQ đã được SELECTED.")
+    return vq
+
+
+def _ensure_vq_not_used(vq_id: int, exclude_po_id: int | None = None) -> None:
+    """
+    Đảm bảo VQ chưa được gán cho PO nào khác (rule #1: one VQ -> one PO).
+    exclude_po_id: bỏ qua PO hiện tại khi update.
+    """
+    qry = PurchaseOrder.query.filter(PurchaseOrder.vq_id == int(vq_id))
+    if exclude_po_id:
+        qry = qry.filter(PurchaseOrder.id != int(exclude_po_id))
+    exists = db.session.query(qry.exists()).scalar()
+    if exists:
+        raise ValueError("VQ này đã được dùng để tạo PO khác.")
+
+
+def _parse_date(s: str | None):
+    if not s:
+        return None
+    return datetime.strptime(s, "%Y-%m-%d")
+
+
+def _commit():
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        raise
+
+
+# ---------------- mutations ----------------
 def create_po(
     po_no: str,
     supplier_id: int,
@@ -95,8 +139,18 @@ def create_po(
     subtotal,
     tax,
     total,
-    vq_id: int | None = None,  # 👈 thêm vq_id
+    vq_id: int | None = None,
 ) -> PurchaseOrder:
+    # Rule: bắt buộc VQ SELECTED + chưa bị dùng (rule #1)
+    vq = _require_selected_vq(vq_id)
+    _ensure_vq_not_used(vq.id)  # one VQ -> one PO
+
+    # (khuyến nghị) nhà cung cấp phải trùng với VQ
+    if vq.supplier_id and int(supplier_id) != int(vq.supplier_id):
+        raise ValueError(
+            "Nhà cung cấp của PO phải trùng với nhà cung cấp của VQ đã chọn."
+        )
+
     po = PurchaseOrder(
         po_no=po_no.strip(),
         supplier_id=int(supplier_id),
@@ -106,7 +160,7 @@ def create_po(
         subtotal=Decimal(str(subtotal or 0)),
         tax=Decimal(str(tax or 0)),
         total=Decimal(str(total or 0)),
-        vq_id=int(vq_id) if vq_id else None,  # 👈 map sang model
+        vq_id=int(vq.id),
     )
     db.session.add(po)
     _commit()
@@ -123,9 +177,24 @@ def update_po(
     subtotal,
     tax,
     total,
-    vq_id: int | None = None,  # 👈 cho phép cập nhật vq_id
+    vq_id: int | None = None,
 ) -> PurchaseOrder:
     po = PurchaseOrder.query.get_or_404(po_id)
+
+    # Rule #3: PO đã CONFIRMED -> không cho chỉnh sửa
+    if po.status == POStatus.CONFIRMED:
+        raise ValueError("PO đã CONFIRMED, không thể chỉnh sửa.")
+
+    # Rule: nếu gán/đổi VQ -> VQ phải SELECTED và chưa bị dùng bởi PO khác (rule #1)
+    vq = _require_selected_vq(vq_id)
+    _ensure_vq_not_used(vq.id, exclude_po_id=po.id)
+
+    # (khuyến nghị) nhà cung cấp phải trùng với VQ
+    if vq.supplier_id and int(supplier_id) != int(vq.supplier_id):
+        raise ValueError(
+            "Nhà cung cấp của PO phải trùng với nhà cung cấp của VQ đã chọn."
+        )
+
     po.po_no = po_no.strip()
     po.supplier_id = int(supplier_id)
     po.status = _to_po_status(status)
@@ -134,7 +203,8 @@ def update_po(
     po.subtotal = Decimal(str(subtotal or 0))
     po.tax = Decimal(str(tax or 0))
     po.total = Decimal(str(total or 0))
-    po.vq_id = int(vq_id) if vq_id else None
+    po.vq_id = int(vq.id)
+
     _commit()
     return po
 
@@ -143,17 +213,3 @@ def delete_po(po_id: int) -> None:
     po = PurchaseOrder.query.get_or_404(po_id)
     db.session.delete(po)
     _commit()
-
-
-def _parse_date(s: str | None):
-    if not s:
-        return None
-    return datetime.strptime(s, "%Y-%m-%d")
-
-
-def _commit():
-    try:
-        db.session.commit()
-    except SQLAlchemyError:
-        db.session.rollback()
-        raise

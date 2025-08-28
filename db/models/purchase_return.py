@@ -1,5 +1,7 @@
+# db/models/purchase_return.py
 from configs import db
 import enum
+from datetime import datetime
 
 
 class PurchaseReturnStatus(enum.Enum):
@@ -14,13 +16,19 @@ class PurchaseReturn(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     gr_id = db.Column(db.Integer, db.ForeignKey("goods_receipt.id"), nullable=False)
     status = db.Column(
-        db.Enum(
-            PurchaseReturnStatus, name="purchasereturnstatus"
-        ),  # <— name quan trọng
+        db.Enum(PurchaseReturnStatus),
         default=PurchaseReturnStatus.DRAFT,
         nullable=False,
     )
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     gr = db.relationship("GoodsReceipt")
+    lines = db.relationship(
+        "ReturnLine",
+        backref="return_doc",
+        cascade="all, delete-orphan",
+        lazy="joined",
+    )
 
 
 class ReturnLine(db.Model):
@@ -33,8 +41,6 @@ class ReturnLine(db.Model):
     )
     gr_line_id = db.Column(db.Integer, db.ForeignKey("gr_line.id"), nullable=False)
     qty = db.Column(db.Numeric(18, 3), nullable=False)
-    reason = db.Column(db.String(255))
-    ret = db.relationship(
-        "PurchaseReturn", backref=db.backref("lines", cascade="all, delete-orphan")
-    )
+    reason = db.Column(db.Text)
+
     gr_line = db.relationship("GRLine")

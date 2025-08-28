@@ -3,13 +3,28 @@
     <!-- Brand -->
     <a class="navbar-brand d-flex align-items-center gap-2" href="/">
       <!-- Logo mini -->
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
-        <path d="M4 3h6v6H4V3zm10 0h6v6h-6V3zM4 13h6v8H4v-8zm10 0h6v8h-6v-8z" opacity=".85"/>
+      <svg
+        width="26"
+        height="26"
+        viewBox="0 0 24 24"
+        fill="#fff"
+        aria-hidden="true"
+      >
+        <path
+          d="M4 3h6v6H4V3zm10 0h6v6h-6V3zM4 13h6v8H4v-8zm10 0h6v8h-6v-8z"
+          opacity=".85"
+        />
       </svg>
     </a>
 
     <!-- Toggler -->
-    <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Toggle navigation">
+    <button
+      class="navbar-toggler ms-auto"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNav"
+      aria-label="Toggle navigation"
+    >
       <span class="navbar-toggler-icon"></span>
     </button>
 
@@ -18,44 +33,125 @@
       <!-- Left: menu -->
       <ul class="navbar-nav ms-2 me-auto align-items-lg-center">
         <li class="nav-item">
-          <a class="nav-link {{ 'active' if request.path == '/' else '' }}" href="/">Trang chủ</a>
+          <a
+            class="nav-link {{ 'active' if request.path == '/' else '' }}"
+            href="/"
+            >Trang chủ</a
+          >
         </li>
 
+        {% if current_user.has_role(UserRole.ADMIN) %}
         <!-- Danh mục -->
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="dmMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dmMenu"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
             Danh mục <span class="chev"></span>
           </a>
           <ul class="dropdown-menu dropdown-modern" aria-labelledby="dmMenu">
-            <li><a class="dropdown-item" href="{{ url_for('supplier_web.suppliers_list') }}">Nhà cung cấp</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('material_web.materials_list') }}">Nguyên liệu</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('unit_web.units_list') }}">Đơn vị tính</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('department_web.departments_list') }}">Phòng ban</a></li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('supplier_web.suppliers_list') }}"
+              >
+                Nhà cung cấp
+              </a>
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('material_web.materials_list') }}"
+              >
+                Nguyên liệu
+              </a>
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('unit_web.units_list') }}"
+              >
+                Đơn vị tính
+              </a>
+            </li>
           </ul>
         </li>
 
         <!-- Quy trình -->
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="qtMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="qtMenu"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
             Quy trình <span class="chev"></span>
           </a>
           <ul class="dropdown-menu dropdown-modern" aria-labelledby="qtMenu">
-            <li><a class="dropdown-item" href="{{ url_for('pr_web.pr_list') }}">PR (Yêu cầu mua)</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('rfq_web.rfq_list') }}">RFQ (Yêu cầu báo giá)</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('vq_web.vq_list') }}">Báo giá NCC</a></li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('pr_web.pr_list') }}"
+                >PR (Yêu cầu mua)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('rfq_web.rfq_list') }}"
+                >RFQ (Yêu cầu báo giá)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('vq_web.vq_list') }}"
+                >Báo giá NCC</a
+              >
+            </li>
             <li><hr class="dropdown-divider" /></li>
-            <li><a class="dropdown-item" href="{{ url_for('purchase_web.purchases_list') }}">Đơn mua hàng (PO)</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('gr_web.gr_list') }}">Phiếu nhận hàng (GR)</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('qc_web.qc_list') }}">QC Report</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('preturn_web.return_list') }}">Phiếu trả hàng</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('invoice_web.invoice_list') }}">Hóa đơn & Thanh toán</a></li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('purchase_web.purchases_list') }}"
+                >Đơn mua hàng (PO)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('gr_web.gr_list') }}"
+                >Phiếu nhận hàng (GR)</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('qc_web.qc_list') }}"
+                >QC Report</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('preturn_web.return_list') }}"
+                >Phiếu trả hàng</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="{{ url_for('invoice_web.invoice_list') }}"
+                >Hóa đơn & Thanh toán</a
+              >
+            </li>
           </ul>
         </li>
+        {% endif %}
       </ul>
 
       <!-- Right: actions -->
       <div class="d-flex align-items-center gap-3">
-        <a href="{{ url_for('auth.logout') }}" class="btn btn-pill btn-outline-light">
+        <a
+          href="{{ url_for('auth.logout') }}"
+          class="btn btn-pill btn-outline-light"
+        >
           <span class="btn-ic">⟶</span> Đăng xuất
         </a>
         {# Ví dụ nút phụ:
@@ -65,7 +161,9 @@
 
       {% else %}
       <div class="ms-auto d-flex align-items-center gap-3">
-        <a href="{{ url_for('auth.login') }}" class="btn btn-pill btn-primary">Đăng nhập</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-pill btn-primary"
+          >Đăng nhập</a
+        >
       </div>
       {% endif %}
     </div>
@@ -73,31 +171,84 @@
 </nav>
 
 <style>
-.nav-modern { background-color:#232f4a; padding-top:.85rem; padding-bottom:.85rem; }
-.nav-modern .navbar-brand { color:#fff; }
-.nav-modern .navbar-toggler { border-color:rgba(255,255,255,.3); }
-.nav-modern .navbar-toggler .navbar-toggler-icon { filter: invert(1) opacity(.9); }
+  .nav-modern {
+    background-color: #232f4a;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+  .nav-modern .navbar-brand {
+    color: #fff;
+  }
+  .nav-modern .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  .nav-modern .navbar-toggler .navbar-toggler-icon {
+    filter: invert(1) opacity(0.9);
+  }
 
-.nav-modern .nav-link{ color:rgba(255,255,255,.85); padding:.5rem 1rem; font-weight:500; letter-spacing:.1px; }
-.nav-modern .nav-link:hover, .nav-modern .nav-link:focus{ color:#fff; }
-.nav-modern .nav-link.active{ color:#fff; }
-.nav-modern .chev{ margin-left:.35rem; font-size:.85em; opacity:.8; }
+  .nav-modern .nav-link {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+  }
+  .nav-modern .nav-link:hover,
+  .nav-modern .nav-link:focus {
+    color: #fff;
+  }
+  .nav-modern .nav-link.active {
+    color: #fff;
+  }
+  .nav-modern .chev {
+    margin-left: 0.35rem;
+    font-size: 0.85em;
+    opacity: 0.8;
+  }
 
-.dropdown-modern{
-  border:1px solid rgba(0,0,0,.06); border-radius:.75rem;
-  box-shadow:0 10px 30px rgba(0,0,0,.15);
-}
-.dropdown-modern .dropdown-item{ border-radius:.5rem; padding:.55rem .75rem; font-weight:500; }
-.dropdown-modern .dropdown-item:hover{ background:#f1f5ff; }
+  .dropdown-modern {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+  .dropdown-modern .dropdown-item {
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    font-weight: 500;
+  }
+  .dropdown-modern .dropdown-item:hover {
+    background: #f1f5ff;
+  }
 
-.btn-pill{ border-radius:999px; padding:.5rem 1rem; font-weight:600; }
-.btn-outline-light{ color:#fff; border-color:rgba(255,255,255,.75); }
-.btn-outline-light:hover{ color:#232f4a; background:#fff; border-color:#fff; }
-.btn-primary{ background:linear-gradient(180deg,#2f6cd1,#255bb1); border:none; }
-.btn-primary:hover{ filter:brightness(1.05); }
-.btn-ic{ display:inline-block; margin-right:.35rem; }
+  .btn-pill {
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+  }
+  .btn-outline-light {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.75);
+  }
+  .btn-outline-light:hover {
+    color: #232f4a;
+    background: #fff;
+    border-color: #fff;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, #2f6cd1, #255bb1);
+    border: none;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.05);
+  }
+  .btn-ic {
+    display: inline-block;
+    margin-right: 0.35rem;
+  }
 
-@media (min-width: 992px){
-  .nav-modern .navbar-nav .nav-link{ padding-left:1rem; padding-right:1rem; }
-}
+  @media (min-width: 992px) {
+    .nav-modern .navbar-nav .nav-link {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
 </style>

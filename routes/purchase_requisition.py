@@ -1,11 +1,14 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required
+from flask_login import login_required, current_user
+from db.models.user import UserRole
+from db.models.purchase_requisition import PurchaseRequisitionStatus
 from dao import (
     purchase_requisition as pr_dao,
     material as material_dao,
     department as department_dao,
 )
 from dao import user as user_dao  # viết dao/user.py trả về list users
+from sqlalchemy.exc import SQLAlchemyError
 
 pr_bp = Blueprint("pr_web", __name__)
 
@@ -44,13 +47,35 @@ def pr_edit(pr_id: int):
     if not pr:
         flash("Không tìm thấy PR", "warning")
         return redirect(url_for("pr_web.pr_list"))
+
     if request.method == "POST":
         requester_id = request.form.get("requester_id")
         note = request.form.get("note")
+        status = (request.form.get("status") or "DRAFT").upper()
         lines = _extract_lines(request)
-        pr_dao.update_pr(pr_id, requester_id, note, lines)
-        flash("Cập nhật PR thành công", "success")
-        return redirect(url_for("pr_web.pr_list"))
+
+        is_approver = False
+        try:
+            is_approver = current_user.has_role("APPROVER") or current_user.has_role(
+                UserRole.APPROVER
+            )
+        except Exception:
+            is_approver = current_user.has_role("APPROVER")
+
+        if not is_approver:
+            status = pr.status.value if getattr(pr, "status", None) else "DRAFT"
+
+        try:
+            pr_dao.update_pr(pr_id, requester_id, note, status, lines)
+            flash("Cập nhật PR thành công", "success")
+            return redirect(url_for("pr_web.pr_list"))
+        except ValueError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("pr_web.pr_edit", pr_id=pr_id))
+        except SQLAlchemyError:
+            flash("Có lỗi khi lưu dữ liệu. Vui lòng thử lại.", "danger")
+            return redirect(url_for("pr_web.pr_edit", pr_id=pr_id))
+
     users = user_dao.list_users()
     mats = material_dao.list_materials()
     return render_template(
@@ -59,6 +84,9 @@ def pr_edit(pr_id: int):
         pr=pr,
         users=users,
         materials=mats,
+        PurchaseRequisitionStatus=PurchaseRequisitionStatus,
+        UserRole=UserRole,
+        can_edit_status=current_user.has_role("APPROVER"),
     )
 
 

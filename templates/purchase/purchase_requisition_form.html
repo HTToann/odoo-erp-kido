@@ -6,7 +6,6 @@
 
   <form method="post">
     <div class="row g-3 mb-3">
-    
       <div class="col-md-4">
         <label class="form-label">Người yêu cầu</label>
         <select name="requester_id" class="form-select" required>
@@ -21,14 +20,19 @@
 
       <div class="col-md-4">
         <label class="form-label">Trạng thái</label>
-        {% set st = pr.status if pr else 'draft' %}
-        <select name="status" class="form-select" disabled>
-          <option value="draft"     {% if st=='draft' %}selected{% endif %}>draft</option>
-          <option value="submitted" {% if st=='submitted' %}selected{% endif %}>submitted</option>
-          <option value="approved"  {% if st=='approved' %}selected{% endif %}>approved</option>
-          <option value="rejected"  {% if st=='rejected' %}selected{% endif %}>rejected</option>
-        </select>
-        <div class="form-text">Trạng thái xử lý ở quy trình duyệt (để đơn giản form không cho đổi).</div>
+{% set st = (pr.status.value if pr else PurchaseRequisitionStatus.DRAFT.value) %}
+        {% set can_edit_status = current_user.has_role('APPROVER') 
+                                 or (UserRole and current_user.has_role(UserRole.APPROVER)) %}
+        <select name="status" class="form-select" {% if not can_edit_status %}disabled{% endif %}>
+  <option value="{{ PurchaseRequisitionStatus.DRAFT.value }}"     {% if st=='DRAFT' %}selected{% endif %}>draft</option>
+  <option value="{{ PurchaseRequisitionStatus.SUBMITTED.value }}" {% if st=='SUBMITTED' %}selected{% endif %}>submitted</option>
+  <option value="{{ PurchaseRequisitionStatus.APPROVED.value }}"  {% if st=='APPROVED' %}selected{% endif %}>approved</option>
+  <option value="{{ PurchaseRequisitionStatus.REJECTED.value }}"  {% if st=='REJECTED' %}selected{% endif %}>rejected</option>
+</select>
+
+{% if not can_edit_status %}
+  <input type="hidden" name="status" value="{{ st }}">
+{% endif %}
       </div>
 
       <div class="col-12">
@@ -87,7 +91,7 @@
       </table>
     </div>
 
-    <div class="d-flex gap-2">
+      <div class="d-flex gap-2">
       <button type="button" id="add-line" class="btn btn-outline-secondary">+ Thêm dòng</button>
       <button class="btn btn-success">Lưu</button>
       <a href="{{ url_for('pr_web.pr_list') }}" class="btn btn-secondary">Hủy</a>

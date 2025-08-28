@@ -4,95 +4,181 @@
 <style>
   /* ====== Page background (nhẹ, không chói) ====== */
   .page-bg {
-    background:
-      radial-gradient(1200px 600px at -10% -20%, rgba(47,108,209,.10), transparent 50%),
-      radial-gradient(800px 400px at 120% 20%, rgba(37,91,177,.08), transparent 55%);
+    background: radial-gradient(
+        1200px 600px at -10% -20%,
+        rgba(47, 108, 209, 0.1),
+        transparent 50%
+      ),
+      radial-gradient(
+        800px 400px at 120% 20%,
+        rgba(37, 91, 177, 0.08),
+        transparent 55%
+      );
     border-radius: 16px;
   }
 
   /* ====== Section heading ====== */
-  .section-title{
-    display:flex; align-items:center; gap:.5rem; margin:2rem 0 1rem 0;
-    font-weight:700;
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 2rem 0 1rem 0;
+    font-weight: 700;
   }
-  .section-badge{
-    font-size:.75rem; font-weight:600; padding:.25rem .55rem; border-radius:999px;
-    background:rgba(35,47,74,.1); color:var(--bs-primary);
+  .section-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(35, 47, 74, 0.1);
+    color: var(--bs-primary);
   }
 
   /* ====== Feature cards ====== */
-  .feature-card{
-    position:relative;
-    border-radius:14px;
-    border:1px solid rgba(0,0,0,.08);
+  .feature-card {
+    position: relative;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     background: linear-gradient(180deg, var(--bs-body-bg), var(--bs-body-bg));
-    box-shadow: 0 2px 10px rgba(0,0,0,.06);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    overflow:hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+      border-color 0.18s ease;
+    overflow: hidden;
   }
-  .feature-card::before{
-    content:""; position:absolute; inset:-1px;
-    border-radius:14px;
-    padding:1px; /* tạo viền gradient rất mảnh */
-    background: linear-gradient(135deg, rgba(47,108,209,.45), rgba(37,91,177,.0));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    pointer-events:none;
+  .feature-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 14px;
+    padding: 1px; /* tạo viền gradient rất mảnh */
+    background: linear-gradient(
+      135deg,
+      rgba(47, 108, 209, 0.45),
+      rgba(37, 91, 177, 0)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
-  .feature-card:hover{
+  .feature-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(0,0,0,.15);
-    border-color: rgba(47,108,209,.35);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    border-color: rgba(47, 108, 209, 0.35);
   }
-  .feature-card .card-body{
-    display:flex; flex-direction:column; gap:.5rem; min-height: 190px;
+  .feature-card:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12),
+      0 0 0 3px rgba(47, 108, 209, 0.2);
+    border-color: rgba(47, 108, 209, 0.4);
+  }
+  .feature-card .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 190px;
+  }
+
+  /* Làm toàn bộ card click được bằng overlay link */
+  .feature-card .card-link {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    z-index: 1;
   }
 
   /* Icon circle */
-  .icon-bubble{
-    width:44px; height:44px; border-radius:999px; display:grid; place-items:center;
-    font-size:1.25rem; font-weight:700;
-    background: rgba(47,108,209,.09);
+  .icon-bubble {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: rgba(47, 108, 209, 0.09);
     color: var(--bs-primary);
-    border: 1px solid rgba(47,108,209,.25);
+    border: 1px solid rgba(47, 108, 209, 0.25);
   }
 
   /* Title + description */
-  .feature-title{ display:flex; align-items:center; gap:.65rem; margin:0; font-weight:700; }
-  .feature-desc{ opacity:.85; margin-bottom:.5rem; }
+  .feature-title {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0;
+    font-weight: 700;
+  }
+  .feature-desc {
+    opacity: 0.85;
+    margin-bottom: 0.5rem;
+  }
 
   /* Footer link area */
-  .feature-actions{ margin-top:auto; display:flex; gap:.5rem; align-items:center; }
-  .btn-soft{
-    border-radius:999px; padding:.45rem .9rem; font-weight:600;
-    border:1px solid rgba(47,108,209,.35);
-    color: var(--bs-primary);
-    background: rgba(47,108,209,.06);
+  .feature-actions {
+    margin-top: auto;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
   }
-  .btn-soft:hover{ background: rgba(47,108,209,.12); color:var(--bs-primary); }
+  .btn-soft {
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(47, 108, 209, 0.35);
+    color: var(--bs-primary);
+    background: rgba(47, 108, 209, 0.06);
+    position: relative;
+    z-index: 2; /* nổi trên overlay */
+  }
+  .btn-soft:hover {
+    background: rgba(47, 108, 209, 0.12);
+    color: var(--bs-primary);
+  }
 
   /* Themed card borders per role */
-  .border-warning{ border-color: rgba(var(--bs-warning-rgb), .45) !important; }
-  .border-primary{ border-color: rgba(var(--bs-primary-rgb), .45) !important; }
-  .border-danger{  border-color: rgba(var(--bs-danger-rgb),  .45) !important; }
-  .border-success{ border-color: rgba(var(--bs-success-rgb), .45) !important; }
+  .border-warning {
+    border-color: rgba(var(--bs-warning-rgb), 0.45) !important;
+  }
+  .border-primary {
+    border-color: rgba(var(--bs-primary-rgb), 0.45) !important;
+  }
+  .border-danger {
+    border-color: rgba(var(--bs-danger-rgb), 0.45) !important;
+  }
+  .border-success {
+    border-color: rgba(var(--bs-success-rgb), 0.45) !important;
+  }
 
   /* Button colors per role */
-  .btn-warning.btn-pill, .btn-primary.btn-pill, .btn-danger.btn-pill, .btn-success.btn-pill{
-    border-radius:999px; padding:.45rem .9rem; font-weight:700; border:none;
+  .btn-warning.btn-pill,
+  .btn-primary.btn-pill,
+  .btn-danger.btn-pill,
+  .btn-success.btn-pill {
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-weight: 700;
+    border: none;
+    position: relative;
+    z-index: 2; /* nổi trên overlay */
   }
 
   /* Small helpers */
-  .muted{ opacity:.85; }
+  .muted {
+    opacity: 0.85;
+  }
 </style>
 
 <div class="page-bg p-3 p-sm-4 p-lg-5">
   <h2 class="mb-2 fw-bold">Quy trình nghiệp vụ - ERP Kido</h2>
   <p class="text-secondary mb-4">
-    Chào mừng đến hệ thống ERP quản lý mua hàng &amp; nguyên liệu của Bánh Trung Thu Kido.
+    Chào mừng đến hệ thống ERP quản lý mua hàng &amp; nguyên liệu của Bánh Trung
+    Thu Kido.
   </p>
 
-  {% if current_user.has_role(UserRole.ADMIN, UserRole.BUYER) %}
+  {# ===== Buyer ===== #} {% if current_user.has_role(UserRole.ADMIN,
+  UserRole.BUYER) %}
   <h5 class="section-title">
     Dành cho Buyer <span class="section-badge">Purchasing</span>
   </h5>
@@ -100,6 +186,11 @@
   <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
     <div class="col">
       <div class="card feature-card h-100 border-warning">
+        <a
+          href="{{ url_for('purchase_web.purchases_list') }}"
+          class="card-link"
+          aria-label="Đơn mua hàng (PO)"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-warning">
             <span class="icon-bubble"><i class="bi bi-bag-check"></i></span>
@@ -107,7 +198,11 @@
           </h5>
           <p class="feature-desc">Tạo &amp; quản lý đơn đặt hàng.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('purchase_web.purchases_list') }}" class="btn btn-warning btn-pill">Xem</a>
+            <a
+              href="{{ url_for('purchase_web.purchases_list') }}"
+              class="btn btn-warning btn-pill"
+              >Xem</a
+            >
           </div>
         </div>
       </div>
@@ -115,14 +210,25 @@
 
     <div class="col">
       <div class="card feature-card h-100 border-warning">
+        <a
+          href="{{ url_for('pr_web.pr_list') }}"
+          class="card-link"
+          aria-label="Đề nghị mua (PR)"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-warning">
-            <span class="icon-bubble"><i class="bi bi-file-earmark-plus"></i></span>
+            <span class="icon-bubble"
+              ><i class="bi bi-file-earmark-plus"></i
+            ></span>
             Đề nghị mua (PR)
           </h5>
           <p class="feature-desc">Tạo &amp; quản lý đề nghị mua.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('pr_web.pr_list') }}" class="btn btn-warning btn-pill">Xem</a>
+            <a
+              href="{{ url_for('pr_web.pr_list') }}"
+              class="btn btn-warning btn-pill"
+              >Xem</a
+            >
           </div>
         </div>
       </div>
@@ -130,14 +236,25 @@
 
     <div class="col">
       <div class="card feature-card h-100 border-warning">
+        <a
+          href="{{ url_for('rfq_web.rfq_list') }}"
+          class="card-link"
+          aria-label="Yêu cầu báo giá (RFQ)"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-warning">
-            <span class="icon-bubble"><i class="bi bi-envelope-paper"></i></span>
+            <span class="icon-bubble"
+              ><i class="bi bi-envelope-paper"></i
+            ></span>
             Yêu cầu báo giá (RFQ)
           </h5>
           <p class="feature-desc">Tạo &amp; quản lý yêu cầu báo giá.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('rfq_web.rfq_list') }}" class="btn btn-warning btn-pill">Xem</a>
+            <a
+              href="{{ url_for('rfq_web.rfq_list') }}"
+              class="btn btn-warning btn-pill"
+              >Xem</a
+            >
           </div>
         </div>
       </div>
@@ -145,6 +262,11 @@
 
     <div class="col">
       <div class="card feature-card h-100 border-warning">
+        <a
+          href="{{ url_for('vq_web.vq_list') }}"
+          class="card-link"
+          aria-label="Báo giá NCC (VQ)"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-warning">
             <span class="icon-bubble"><i class="bi bi-cash-stack"></i></span>
@@ -152,15 +274,18 @@
           </h5>
           <p class="feature-desc">Tạo &amp; quản lý báo giá nhà cung cấp.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('vq_web.vq_list') }}" class="btn btn-warning btn-pill">Xem</a>
+            <a
+              href="{{ url_for('vq_web.vq_list') }}"
+              class="btn btn-warning btn-pill"
+              >Xem</a
+            >
           </div>
         </div>
       </div>
     </div>
   </div>
-  {% endif %}
-
-  {% if current_user.has_role(UserRole.WAREHOUSE) %}
+  {% endif %} {# ===== Warehouse ===== #} {% if
+  current_user.has_role(UserRole.ADMIN,UserRole.WAREHOUSE) %}
   <h5 class="section-title">
     Dành cho Thủ kho <span class="section-badge">Warehouse</span>
   </h5>
@@ -168,6 +293,11 @@
   <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
     <div class="col">
       <div class="card feature-card h-100 border-primary">
+        <a
+          href="{{ url_for('gr_web.gr_list') }}"
+          class="card-link"
+          aria-label="GR - Phiếu nhận hàng"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-primary">
             <span class="icon-bubble"><i class="bi bi-box-seam"></i></span>
@@ -175,15 +305,42 @@
           </h5>
           <p class="feature-desc">Phiếu nhận hàng.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('gr_web.gr_list') }}" class="btn btn-primary btn-pill">Xem</a>
+            <a
+              href="{{ url_for('gr_web.gr_list') }}"
+              class="btn btn-primary btn-pill"
+              >Xem</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card feature-card h-100 border-primary">
+        <a
+          href="{{ url_for('preturn_web.return_list') }}"
+          class="card-link"
+          aria-label="PR - Phiếu trả hàng"
+        ></a>
+        <div class="card-body">
+          <h5 class="feature-title text-primary">
+            <span class="icon-bubble"><i class="bi bi-box-seam"></i></span>
+            PR
+          </h5>
+          <p class="feature-desc">Phiếu trả hàng.</p>
+          <div class="feature-actions">
+            <a
+              href="{{ url_for('preturn_web.return_list') }}"
+              class="btn btn-primary btn-pill"
+              >Xem</a
+            >
           </div>
         </div>
       </div>
     </div>
   </div>
-  {% endif %}
-
-  {% if current_user.has_role(UserRole.QC) %}
+  {% endif %} {# ===== QC ===== #} {% if
+  current_user.has_role(UserRole.ADMIN,UserRole.QC) %}
   <h5 class="section-title">
     Dành cho QC <span class="section-badge">Quality Control</span>
   </h5>
@@ -191,23 +348,35 @@
   <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
     <div class="col">
       <div class="card feature-card h-100 border-danger">
+        <a
+          href="{{ url_for('qc_web.qc_list') }}"
+          class="card-link"
+          aria-label="QC - Báo cáo kiểm tra chất lượng"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-danger">
-            <span class="icon-bubble"><i class="bi bi-clipboard2-check"></i></span>
+            <span class="icon-bubble"
+              ><i class="bi bi-clipboard2-check"></i
+            ></span>
             QC
           </h5>
           <p class="feature-desc">Báo cáo kiểm tra chất lượng.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('qc_web.qc_list') }}" class="btn btn-danger btn-pill">Xem</a>
-            <span class="muted small"><i class="bi bi-arrow-right-short"></i></span>
+            <a
+              href="{{ url_for('qc_web.qc_list') }}"
+              class="btn btn-danger btn-pill"
+              >Xem</a
+            >
+            <span class="muted small"
+              ><i class="bi bi-arrow-right-short"></i
+            ></span>
           </div>
         </div>
       </div>
     </div>
   </div>
-  {% endif %}
-
-  {% if current_user.has_role(UserRole.APPROVER) %}
+  {% endif %} {# ===== Approval ===== #} {% if
+  current_user.has_role(UserRole.ADMIN,UserRole.APPROVER) %}
   <h5 class="section-title">
     Dành cho duyệt đơn <span class="section-badge">Approval</span>
   </h5>
@@ -215,6 +384,11 @@
   <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
     <div class="col">
       <div class="card feature-card h-100 border-danger">
+        <a
+          href="{{ url_for('purchase_web.purchases_list') }}"
+          class="card-link"
+          aria-label="PO - Duyệt đơn mua hàng"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-danger">
             <span class="icon-bubble"><i class="bi bi-bag-check"></i></span>
@@ -222,17 +396,47 @@
           </h5>
           <p class="feature-desc">Tạo &amp; quản lý đơn đặt hàng.</p>
           <div class="feature-actions">
-            {# dùng màu cảnh báo để đồng bộ với Buyer/PO nếu muốn #}
-            <a href="{{ url_for('purchase_web.purchases_list') }}" class="btn btn-warning btn-pill">Xem</a>
-            <span class="muted small"><i class="bi bi-arrow-right-short"></i></span>
+            <a
+              href="{{ url_for('purchase_web.purchases_list') }}"
+              class="btn btn-danger btn-pill"
+              >Xem</a
+            >
+            <span class="muted small"
+              ><i class="bi bi-arrow-right-short"></i
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card feature-card h-100 border-warning">
+        <a
+          href="{{ url_for('pr_web.pr_list') }}"
+          class="card-link"
+          aria-label="PR - Duyệt đề nghị mua"
+        ></a>
+        <div class="card-body">
+          <h5 class="feature-title text-warning">
+            <span class="icon-bubble"
+              ><i class="bi bi-file-earmark-plus"></i
+            ></span>
+            Đề nghị mua (PR)
+          </h5>
+          <p class="feature-desc">Tạo &amp; quản lý đề nghị mua.</p>
+          <div class="feature-actions">
+            <a
+              href="{{ url_for('pr_web.pr_list') }}"
+              class="btn btn-warning btn-pill"
+              >Xem</a
+            >
           </div>
         </div>
       </div>
     </div>
   </div>
-  {% endif %}
-
-  {% if current_user.has_role(UserRole.ACCOUNTANT) %}
+  {% endif %} {# ===== Accountant ===== #} {% if
+  current_user.has_role(UserRole.ADMIN,UserRole.ACCOUNTANT) %}
   <h5 class="section-title">
     Dành cho Kế toán <span class="section-badge">Finance</span>
   </h5>
@@ -240,6 +444,11 @@
   <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3">
     <div class="col">
       <div class="card feature-card h-100 border-success">
+        <a
+          href="{{ url_for('invoice_web.invoice_list') }}"
+          class="card-link"
+          aria-label="Hóa đơn & Thanh toán"
+        ></a>
         <div class="card-body">
           <h5 class="feature-title text-success">
             <span class="icon-bubble"><i class="bi bi-receipt"></i></span>
@@ -247,8 +456,14 @@
           </h5>
           <p class="feature-desc">Theo dõi công nợ &amp; chi trả.</p>
           <div class="feature-actions">
-            <a href="{{ url_for('invoice_web.invoice_list') }}" class="btn btn-success btn-pill">Xem</a>
-            <span class="muted small"><i class="bi bi-arrow-right-short"></i></span>
+            <a
+              href="{{ url_for('invoice_web.invoice_list') }}"
+              class="btn btn-success btn-pill"
+              >Xem</a
+            >
+            <span class="muted small"
+              ><i class="bi bi-arrow-right-short"></i
+            ></span>
           </div>
         </div>
       </div>

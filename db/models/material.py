@@ -15,3 +15,6 @@ class Material(db.Model):
 
     attrs = db.Column(JSONB, default=dict)
     is_active = db.Column(db.Boolean, default=True)
+
+    def __str__(self):
+        return f"[{self.sku}] {self.name}"

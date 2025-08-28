@@ -82,42 +82,55 @@ def list_all_gr_lines() -> List[GoodsReceiptLine]:
 #         Mutations
 # =========================
 def create_qc(gr_id: Optional[int], status: str, lines: List[Dict]) -> QC:
-    """
-    Tạo phiếu QC.
-    lines: [{gr_line_id, result('pass'|'fail'), note, accepted_qty?}]
-      - Nếu đã thêm cột accepted_qty: lưu theo payload (mặc định = 0 nếu fail, = gr_line.qty nếu pass & không truyền)
-      - Nếu CHƯA có cột accepted_qty: vẫn tạo được, finalize sẽ hiểu PASS = full qty.
-    """
+    gr = _require_posted_gr(gr_id)  # <-- BẮT BUỘC GR.POSTED
+
+    if not lines:
+        raise ValueError("Vui lòng nhập ít nhất 1 dòng QC.")
+
     qc = QC(
-        gr_id=int(gr_id) if gr_id else None,
+        gr_id=gr.id,
         status=_to_qc_status(status),
     )
     db.session.add(qc)
     db.session.flush()
 
-    for ln in lines or []:
+    seen = set()
+    for idx, ln in enumerate(lines, 1):
         gr_line_id = ln.get("gr_line_id")
         if not gr_line_id:
-            continue
-        result = (ln.get("result") or "pass").strip().lower()
+            raise ValueError(f"Dòng {idx}: thiếu gr_line_id.")
+        gr_line_id = int(gr_line_id)
+
+        if gr_line_id in seen:
+            raise ValueError(f"Dòng {idx}: gr_line_id bị trùng trong phiếu QC.")
+        seen.add(gr_line_id)
+
+        gr_line = GoodsReceiptLine.query.get_or_404(gr_line_id)
+        if gr_line.gr_id != gr.id:
+            raise ValueError(
+                f"Dòng {idx}: GR line #{gr_line_id} không thuộc GR #{gr.id}."
+            )
+
+        result = _coerce_result(ln.get("result"))
         note = ln.get("note")
 
-        qc_line = QCLine(qc=qc, gr_line_id=int(gr_line_id), result=result, note=note)
+        qc_line = QCLine(qc=qc, gr_line_id=gr_line_id, result=result, note=note)
 
         if _has_accepted_qty():
-            gr_line = GoodsReceiptLine.query.get_or_404(int(gr_line_id))
+            gr_qty = float(gr_line.qty or 0)
             if result == "pass":
-                # nếu không truyền thì mặc định nhận đủ
                 acc = ln.get("accepted_qty")
-                acc = float(acc) if acc is not None else float(gr_line.qty or 0)
+                acc = float(acc) if acc is not None else gr_qty
             else:
                 acc = float(ln.get("accepted_qty") or 0)
+                if acc > 0:
+                    raise ValueError(
+                        f"Dòng {idx}: kết quả FAIL thì accepted_qty phải = 0."
+                    )
 
-            # validate: 0 <= accepted_qty <= qty nhận
-            gr_qty = float(gr_line.qty or 0)
             if acc < 0 or acc > gr_qty + 1e-9:
                 raise ValueError(
-                    f"accepted_qty vượt quá số nhận (GR line #{gr_line.id})"
+                    f"Dòng {idx}: accepted_qty vượt quá số nhận của GR line #{gr_line.id}."
                 )
             qc_line.accepted_qty = acc
 
@@ -128,32 +141,51 @@ def create_qc(gr_id: Optional[int], status: str, lines: List[Dict]) -> QC:
 
 
 def _save_qc_lines(qc: "QC", lines: List[Dict]) -> None:
-    """Ghi lại toàn bộ dòng QC (xoá cũ -> thêm mới) kèm validate accepted_qty."""
+    if not qc.gr_id:
+        raise ValueError("QC chưa gắn với GR, không thể ghi dòng.")
+
+    gr = _require_posted_gr(qc.gr_id)  # đảm bảo GR.POSTED
+
     QCLine.query.filter_by(qc_id=qc.id).delete()
     db.session.flush()
 
-    for ln in lines or []:
+    seen = set()
+    for idx, ln in enumerate(lines or [], 1):
         gr_line_id = ln.get("gr_line_id")
         if not gr_line_id:
-            continue
+            raise ValueError(f"Dòng {idx}: thiếu gr_line_id.")
+        gr_line_id = int(gr_line_id)
 
-        result = (ln.get("result") or "pass").strip().lower()
+        if gr_line_id in seen:
+            raise ValueError(f"Dòng {idx}: gr_line_id bị trùng trong phiếu QC.")
+        seen.add(gr_line_id)
+
+        gr_line = GoodsReceiptLine.query.get_or_404(gr_line_id)
+        if gr_line.gr_id != gr.id:
+            raise ValueError(
+                f"Dòng {idx}: GR line #{gr_line_id} không thuộc GR #{gr.id}."
+            )
+
+        result = _coerce_result(ln.get("result"))
         note = ln.get("note")
 
-        qcl = QCLine(qc=qc, gr_line_id=int(gr_line_id), result=result, note=note)
+        qcl = QCLine(qc=qc, gr_line_id=gr_line_id, result=result, note=note)
 
         if _has_accepted_qty():
-            gr_line = GoodsReceiptLine.query.get_or_404(int(gr_line_id))
+            gr_qty = float(gr_line.qty or 0)
             if result == "pass":
                 acc = ln.get("accepted_qty")
-                acc = float(acc) if acc is not None else float(gr_line.qty or 0)
+                acc = float(acc) if acc is not None else gr_qty
             else:
                 acc = float(ln.get("accepted_qty") or 0)
+                if acc > 0:
+                    raise ValueError(
+                        f"Dòng {idx}: kết quả FAIL thì accepted_qty phải = 0."
+                    )
 
-            gr_qty = float(gr_line.qty or 0)
             if acc < 0 or acc > gr_qty + 1e-9:
                 raise ValueError(
-                    f"accepted_qty vượt quá số nhận (GR line #{gr_line.id})"
+                    f"Dòng {idx}: accepted_qty vượt quá số nhận của GR line #{gr_line.id}."
                 )
             qcl.accepted_qty = acc
 
@@ -180,11 +212,6 @@ def _set_checked_at(old_status: "QCStatus", new_status: "QCStatus", qc: "QC") ->
 def update_qc(
     qc_id: int, gr_id: Optional[int], status: str, lines: List[Dict]
 ) -> Optional["QC"]:
-    """
-    Cập nhật nội dung phiếu QC. KHÔNG ghi kho.
-    Cho phép sửa nội dung khi còn PENDING/FAILED.
-    Chặn đổi từ PASSED -> PENDING/FAILED. Chặn đổi GR khi đã PASSED.
-    """
     qc = get_qc(qc_id)
     if not qc:
         return None
@@ -193,21 +220,21 @@ def update_qc(
     old_gr_id = qc.gr_id
     new_status = _to_qc_status(status)
 
-    # Rule trạng thái
+    # đã PASSED -> không đổi trạng thái & không đổi GR
     if old_status == QCStatus.PASSED and new_status != QCStatus.PASSED:
         raise ValueError("QC đã PASSED, không thể đổi sang trạng thái khác.")
-    # Đổi GR khi đã PASSED -> cấm
     if old_status == QCStatus.PASSED and gr_id and int(gr_id) != old_gr_id:
         raise ValueError("QC đã PASSED, không được đổi GR.")
 
-    # Ghi header
-    qc.gr_id = int(gr_id) if gr_id else None
+    # nếu có yêu cầu đổi/gán GR -> GR phải POSTED
+    if gr_id is not None:
+        gr = _require_posted_gr(gr_id)
+        qc.gr_id = gr.id
+
     qc.status = new_status
     _set_checked_at(old_status, new_status, qc)
 
-    # Ghi lines
     _save_qc_lines(qc, lines)
-
     _commit()
     return qc
 
@@ -215,51 +242,40 @@ def update_qc(
 # -----------------------------
 # Finalize (ghi kho phần đạt)
 # -----------------------------
-def finalize_qc(qc_id: int, status: str, lines: List[Dict]) -> "QC":
-    """
-    Chốt QC và GHI KHO phần đạt.
-    - Chỉ cho chốt về PASSED hoặc FAILED (không cho PENDING).
-    - PASSED: xoá movement QC_PASS cũ (nếu có) rồi ghi lại theo accepted_qty.
-    - FAILED: không nhập kho (có thể tạo PurchaseReturn sau).
-    - Không cho lùi từ PASSED -> trạng thái khác.
-    """
+def finalize_qc(qc_id: int, status: str, lines: List[Dict]) -> QC:
     qc = get_qc(qc_id)
     if not qc:
         raise ValueError("QC không tồn tại.")
 
+    # QC phải có GR và GR.POSTED
+    _require_posted_gr(qc.gr_id)
+
     old_status = qc.status
     new_status = _to_qc_status(status)
-
     if new_status == QCStatus.PENDING:
         raise ValueError("Không thể chốt QC về trạng thái PENDING.")
-
     if old_status == QCStatus.PASSED and new_status != QCStatus.PASSED:
         raise ValueError("QC đã PASSED, không thể đổi sang trạng thái khác.")
 
-    # Cập nhật nội dung trước khi chốt
     _save_qc_lines(qc, lines)
 
-    # Set trạng thái + timestamp đúng chuẩn
     _set_checked_at(old_status, new_status, qc)
     qc.status = new_status
     db.session.flush()
 
-    # Ghi kho khi PASSED
     if qc.status == QCStatus.PASSED:
-        # Rollback movement cũ (nếu sửa lại nội dung)
         inv_dao.remove_movements("QC_PASS", qc.id)
 
-        affected: set[int] = set()
-        for ln in qc.lines:
+        db.session.expire(qc, ["lines"])
+        fresh_lines = qc.lines
+
+        affected = set()
+        for ln in fresh_lines:
             if _has_accepted_qty():
                 qty_in = float(ln.accepted_qty or 0)
             else:
                 gr_line = GoodsReceiptLine.query.get(ln.gr_line_id)
-                qty_in = (
-                    float(gr_line.qty or 0)
-                    if (ln.result or "").lower() == "pass"
-                    else 0.0
-                )
+                qty_in = float(gr_line.qty or 0) if ln.result == "pass" else 0.0
 
             if qty_in > 0:
                 inv_dao.add_movement(
@@ -289,3 +305,24 @@ def delete_qc(qc_id: int) -> bool:
     db.session.delete(qc)
     _commit()
     return True
+
+
+# ---------- helpers thêm ----------
+def _require_posted_gr(gr_id: int) -> GoodsReceipt:
+    """Lấy GR và đảm bảo GR.POSTED, nếu không thì raise ValueError/404 hợp lý."""
+    if not gr_id:
+        raise ValueError("Vui lòng chọn phiếu GR.")
+    gr = GoodsReceipt.query.get_or_404(int(gr_id))
+    from db.models.goods_receipt import GRStatus  # tránh vòng import
+
+    if gr.status != GRStatus.POSTED:
+        raise ValueError("Chỉ được tạo/ghi QC khi GR đã POSTED.")
+    return gr
+
+
+def _coerce_result(v: Optional[str]) -> str:
+    s = (v or "").strip().lower()
+    if s in ("pass", "fail"):
+        return s
+    # ép giá trị lạ về 'fail' để an toàn, hoặc raise nếu muốn cứng
+    return "fail"
